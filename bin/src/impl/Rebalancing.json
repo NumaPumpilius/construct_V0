@@ -1,0 +1,991 @@
+{
+    "contractName": "Rebalancing",
+    "abi": [
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "caller",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "uint256",
+                    "name": "reward",
+                    "type": "uint256"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "uint128",
+                    "name": "timestamp",
+                    "type": "uint128"
+                }
+            ],
+            "name": "Rebalance",
+            "type": "event"
+        },
+        {
+            "inputs": [],
+            "name": "getReward",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "rebalance",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "rebalanceInterval",
+            "outputs": [
+                {
+                    "internalType": "uint128",
+                    "name": "",
+                    "type": "uint128"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "rebalanceRequired",
+            "outputs": [
+                {
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "rebalanceTimestamp",
+            "outputs": [
+                {
+                    "internalType": "uint128",
+                    "name": "",
+                    "type": "uint128"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        }
+    ],
+    "metadata": "{\"compiler\":{\"version\":\"0.8.13+commit.abaa5c0e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"caller\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"reward\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint128\",\"name\":\"timestamp\",\"type\":\"uint128\"}],\"name\":\"Rebalance\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"getReward\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"rebalance\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"rebalanceInterval\",\"outputs\":[{\"internalType\":\"uint128\",\"name\":\"\",\"type\":\"uint128\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"rebalanceRequired\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"rebalanceTimestamp\",\"outputs\":[{\"internalType\":\"uint128\",\"name\":\"\",\"type\":\"uint128\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"/Users/misha/Library/Mobile Documents/com~apple~CloudDocs/Dev/construct-finance/construct_V0/src/impl/Rebalancing.sol\":\"Rebalancing\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/misha/Library/Mobile Documents/com~apple~CloudDocs/Dev/construct-finance/construct_V0/src/impl/Rebalancing.sol\":{\"keccak256\":\"0x532e0c9f40b77bcc00f5fbae73b85aeb07421e59b3f0220b0c0b40327949340b\",\"license\":\"AGPL-3.0-only\",\"urls\":[\"bzz-raw://9b921de64ff4763bc7d3f112fcdfd7685fc283779579c149a955f44285cd4bc9\",\"dweb:/ipfs/QmP2QeJpevs1ypE3NqhybPiDdaRYN2878zj5c1H8XizyxH\"]}},\"version\":1}",
+    "bytecode": "",
+    "deployedBytecode": "",
+    "sourceMap": "",
+    "deployedSourceMap": "",
+    "sourcePath": "/Users/misha/Library/Mobile Documents/com~apple~CloudDocs/Dev/construct-finance/construct_V0/src/impl/Rebalancing.sol",
+    "compiler": {
+        "name": "solc",
+        "version": "0.8.13+commit.abaa5c0e"
+    },
+    "ast": {
+        "absolutePath": "/Users/misha/Library/Mobile Documents/com~apple~CloudDocs/Dev/construct-finance/construct_V0/src/impl/Rebalancing.sol",
+        "exportedSymbols": {
+            "Rebalancing": [
+                12991
+            ]
+        },
+        "id": 12992,
+        "license": "AGPL-3.0-only",
+        "nodeType": "SourceUnit",
+        "nodes": [
+            {
+                "id": 12920,
+                "literals": [
+                    "solidity",
+                    "^",
+                    "0.8",
+                    ".13"
+                ],
+                "nodeType": "PragmaDirective",
+                "src": "42:24:29"
+            },
+            {
+                "abstract": true,
+                "baseContracts": [],
+                "canonicalName": "Rebalancing",
+                "contractDependencies": [],
+                "contractKind": "contract",
+                "fullyImplemented": false,
+                "id": 12991,
+                "linearizedBaseContracts": [
+                    12991
+                ],
+                "name": "Rebalancing",
+                "nameLocation": "86:11:29",
+                "nodeType": "ContractDefinition",
+                "nodes": [
+                    {
+                        "constant": false,
+                        "functionSelector": "16d1d916",
+                        "id": 12922,
+                        "mutability": "immutable",
+                        "name": "rebalanceInterval",
+                        "nameLocation": "129:17:29",
+                        "nodeType": "VariableDeclaration",
+                        "scope": 12991,
+                        "src": "104:42:29",
+                        "stateVariable": true,
+                        "storageLocation": "default",
+                        "typeDescriptions": {
+                            "typeIdentifier": "t_uint128",
+                            "typeString": "uint128"
+                        },
+                        "typeName": {
+                            "id": 12921,
+                            "name": "uint128",
+                            "nodeType": "ElementaryTypeName",
+                            "src": "104:7:29",
+                            "typeDescriptions": {
+                                "typeIdentifier": "t_uint128",
+                                "typeString": "uint128"
+                            }
+                        },
+                        "visibility": "public"
+                    },
+                    {
+                        "constant": false,
+                        "functionSelector": "adbd0f8f",
+                        "id": 12924,
+                        "mutability": "mutable",
+                        "name": "rebalanceTimestamp",
+                        "nameLocation": "181:18:29",
+                        "nodeType": "VariableDeclaration",
+                        "scope": 12991,
+                        "src": "166:33:29",
+                        "stateVariable": true,
+                        "storageLocation": "default",
+                        "typeDescriptions": {
+                            "typeIdentifier": "t_uint128",
+                            "typeString": "uint128"
+                        },
+                        "typeName": {
+                            "id": 12923,
+                            "name": "uint128",
+                            "nodeType": "ElementaryTypeName",
+                            "src": "166:7:29",
+                            "typeDescriptions": {
+                                "typeIdentifier": "t_uint128",
+                                "typeString": "uint128"
+                            }
+                        },
+                        "visibility": "public"
+                    },
+                    {
+                        "anonymous": false,
+                        "eventSelector": "9d87982806b4b9230ca8e2416e1584fbff27a9eebcfadf57dbb57ea87ec8ef23",
+                        "id": 12932,
+                        "name": "Rebalance",
+                        "nameLocation": "212:9:29",
+                        "nodeType": "EventDefinition",
+                        "parameters": {
+                            "id": 12931,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 12926,
+                                    "indexed": true,
+                                    "mutability": "mutable",
+                                    "name": "caller",
+                                    "nameLocation": "238:6:29",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 12932,
+                                    "src": "222:22:29",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_address",
+                                        "typeString": "address"
+                                    },
+                                    "typeName": {
+                                        "id": 12925,
+                                        "name": "address",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "222:7:29",
+                                        "stateMutability": "nonpayable",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_address",
+                                            "typeString": "address"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                },
+                                {
+                                    "constant": false,
+                                    "id": 12928,
+                                    "indexed": false,
+                                    "mutability": "mutable",
+                                    "name": "reward",
+                                    "nameLocation": "254:6:29",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 12932,
+                                    "src": "246:14:29",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_uint256",
+                                        "typeString": "uint256"
+                                    },
+                                    "typeName": {
+                                        "id": 12927,
+                                        "name": "uint256",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "246:7:29",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_uint256",
+                                            "typeString": "uint256"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                },
+                                {
+                                    "constant": false,
+                                    "id": 12930,
+                                    "indexed": false,
+                                    "mutability": "mutable",
+                                    "name": "timestamp",
+                                    "nameLocation": "270:9:29",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 12932,
+                                    "src": "262:17:29",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_uint128",
+                                        "typeString": "uint128"
+                                    },
+                                    "typeName": {
+                                        "id": 12929,
+                                        "name": "uint128",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "262:7:29",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_uint128",
+                                            "typeString": "uint128"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "221:59:29"
+                        },
+                        "src": "206:75:29"
+                    },
+                    {
+                        "body": {
+                            "id": 12941,
+                            "nodeType": "Block",
+                            "src": "327:55:29",
+                            "statements": [
+                                {
+                                    "expression": {
+                                        "id": 12939,
+                                        "isConstant": false,
+                                        "isLValue": false,
+                                        "isPure": false,
+                                        "lValueRequested": false,
+                                        "leftHandSide": {
+                                            "id": 12937,
+                                            "name": "rebalanceInterval",
+                                            "nodeType": "Identifier",
+                                            "overloadedDeclarations": [],
+                                            "referencedDeclaration": 12922,
+                                            "src": "337:17:29",
+                                            "typeDescriptions": {
+                                                "typeIdentifier": "t_uint128",
+                                                "typeString": "uint128"
+                                            }
+                                        },
+                                        "nodeType": "Assignment",
+                                        "operator": "=",
+                                        "rightHandSide": {
+                                            "id": 12938,
+                                            "name": "_rebalanceInterval",
+                                            "nodeType": "Identifier",
+                                            "overloadedDeclarations": [],
+                                            "referencedDeclaration": 12934,
+                                            "src": "357:18:29",
+                                            "typeDescriptions": {
+                                                "typeIdentifier": "t_uint128",
+                                                "typeString": "uint128"
+                                            }
+                                        },
+                                        "src": "337:38:29",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_uint128",
+                                            "typeString": "uint128"
+                                        }
+                                    },
+                                    "id": 12940,
+                                    "nodeType": "ExpressionStatement",
+                                    "src": "337:38:29"
+                                }
+                            ]
+                        },
+                        "id": 12942,
+                        "implemented": true,
+                        "kind": "constructor",
+                        "modifiers": [],
+                        "name": "",
+                        "nameLocation": "-1:-1:-1",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 12935,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 12934,
+                                    "mutability": "mutable",
+                                    "name": "_rebalanceInterval",
+                                    "nameLocation": "307:18:29",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 12942,
+                                    "src": "299:26:29",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_uint128",
+                                        "typeString": "uint128"
+                                    },
+                                    "typeName": {
+                                        "id": 12933,
+                                        "name": "uint128",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "299:7:29",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_uint128",
+                                            "typeString": "uint128"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "298:28:29"
+                        },
+                        "returnParameters": {
+                            "id": 12936,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "327:0:29"
+                        },
+                        "scope": 12991,
+                        "src": "287:95:29",
+                        "stateMutability": "nonpayable",
+                        "virtual": false,
+                        "visibility": "internal"
+                    },
+                    {
+                        "functionSelector": "3a794246",
+                        "id": 12947,
+                        "implemented": false,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "rebalanceRequired",
+                        "nameLocation": "397:17:29",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 12943,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "414:2:29"
+                        },
+                        "returnParameters": {
+                            "id": 12946,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 12945,
+                                    "mutability": "mutable",
+                                    "name": "",
+                                    "nameLocation": "-1:-1:-1",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 12947,
+                                    "src": "446:4:29",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_bool",
+                                        "typeString": "bool"
+                                    },
+                                    "typeName": {
+                                        "id": 12944,
+                                        "name": "bool",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "446:4:29",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_bool",
+                                            "typeString": "bool"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "445:6:29"
+                        },
+                        "scope": 12991,
+                        "src": "388:64:29",
+                        "stateMutability": "view",
+                        "virtual": true,
+                        "visibility": "public"
+                    },
+                    {
+                        "body": {
+                            "id": 12978,
+                            "nodeType": "Block",
+                            "src": "494:242:29",
+                            "statements": [
+                                {
+                                    "expression": {
+                                        "arguments": [
+                                            {
+                                                "arguments": [],
+                                                "expression": {
+                                                    "argumentTypes": [],
+                                                    "id": 12951,
+                                                    "name": "rebalanceRequired",
+                                                    "nodeType": "Identifier",
+                                                    "overloadedDeclarations": [],
+                                                    "referencedDeclaration": 12947,
+                                                    "src": "512:17:29",
+                                                    "typeDescriptions": {
+                                                        "typeIdentifier": "t_function_internal_view$__$returns$_t_bool_$",
+                                                        "typeString": "function () view returns (bool)"
+                                                    }
+                                                },
+                                                "id": 12952,
+                                                "isConstant": false,
+                                                "isLValue": false,
+                                                "isPure": false,
+                                                "kind": "functionCall",
+                                                "lValueRequested": false,
+                                                "names": [],
+                                                "nodeType": "FunctionCall",
+                                                "src": "512:19:29",
+                                                "tryCall": false,
+                                                "typeDescriptions": {
+                                                    "typeIdentifier": "t_bool",
+                                                    "typeString": "bool"
+                                                }
+                                            },
+                                            {
+                                                "hexValue": "21726562616c616e63654e6f745265717569726564",
+                                                "id": 12953,
+                                                "isConstant": false,
+                                                "isLValue": false,
+                                                "isPure": true,
+                                                "kind": "string",
+                                                "lValueRequested": false,
+                                                "nodeType": "Literal",
+                                                "src": "533:23:29",
+                                                "typeDescriptions": {
+                                                    "typeIdentifier": "t_stringliteral_6746cc4fb6bb35b23d2d5d3321466e38490901091e54f56ef802fc4b0913376d",
+                                                    "typeString": "literal_string \"!rebalanceNotRequired\""
+                                                },
+                                                "value": "!rebalanceNotRequired"
+                                            }
+                                        ],
+                                        "expression": {
+                                            "argumentTypes": [
+                                                {
+                                                    "typeIdentifier": "t_bool",
+                                                    "typeString": "bool"
+                                                },
+                                                {
+                                                    "typeIdentifier": "t_stringliteral_6746cc4fb6bb35b23d2d5d3321466e38490901091e54f56ef802fc4b0913376d",
+                                                    "typeString": "literal_string \"!rebalanceNotRequired\""
+                                                }
+                                            ],
+                                            "id": 12950,
+                                            "name": "require",
+                                            "nodeType": "Identifier",
+                                            "overloadedDeclarations": [
+                                                4294967278,
+                                                4294967278
+                                            ],
+                                            "referencedDeclaration": 4294967278,
+                                            "src": "504:7:29",
+                                            "typeDescriptions": {
+                                                "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
+                                                "typeString": "function (bool,string memory) pure"
+                                            }
+                                        },
+                                        "id": 12954,
+                                        "isConstant": false,
+                                        "isLValue": false,
+                                        "isPure": false,
+                                        "kind": "functionCall",
+                                        "lValueRequested": false,
+                                        "names": [],
+                                        "nodeType": "FunctionCall",
+                                        "src": "504:53:29",
+                                        "tryCall": false,
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_tuple$__$",
+                                            "typeString": "tuple()"
+                                        }
+                                    },
+                                    "id": 12955,
+                                    "nodeType": "ExpressionStatement",
+                                    "src": "504:53:29"
+                                },
+                                {
+                                    "expression": {
+                                        "arguments": [],
+                                        "expression": {
+                                            "argumentTypes": [],
+                                            "id": 12956,
+                                            "name": "_rebalance",
+                                            "nodeType": "Identifier",
+                                            "overloadedDeclarations": [],
+                                            "referencedDeclaration": 12990,
+                                            "src": "567:10:29",
+                                            "typeDescriptions": {
+                                                "typeIdentifier": "t_function_internal_nonpayable$__$returns$__$",
+                                                "typeString": "function ()"
+                                            }
+                                        },
+                                        "id": 12957,
+                                        "isConstant": false,
+                                        "isLValue": false,
+                                        "isPure": false,
+                                        "kind": "functionCall",
+                                        "lValueRequested": false,
+                                        "names": [],
+                                        "nodeType": "FunctionCall",
+                                        "src": "567:12:29",
+                                        "tryCall": false,
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_tuple$__$",
+                                            "typeString": "tuple()"
+                                        }
+                                    },
+                                    "id": 12958,
+                                    "nodeType": "ExpressionStatement",
+                                    "src": "567:12:29"
+                                },
+                                {
+                                    "expression": {
+                                        "id": 12965,
+                                        "isConstant": false,
+                                        "isLValue": false,
+                                        "isPure": false,
+                                        "lValueRequested": false,
+                                        "leftHandSide": {
+                                            "id": 12959,
+                                            "name": "rebalanceTimestamp",
+                                            "nodeType": "Identifier",
+                                            "overloadedDeclarations": [],
+                                            "referencedDeclaration": 12924,
+                                            "src": "589:18:29",
+                                            "typeDescriptions": {
+                                                "typeIdentifier": "t_uint128",
+                                                "typeString": "uint128"
+                                            }
+                                        },
+                                        "nodeType": "Assignment",
+                                        "operator": "=",
+                                        "rightHandSide": {
+                                            "arguments": [
+                                                {
+                                                    "expression": {
+                                                        "id": 12962,
+                                                        "name": "block",
+                                                        "nodeType": "Identifier",
+                                                        "overloadedDeclarations": [],
+                                                        "referencedDeclaration": 4294967292,
+                                                        "src": "618:5:29",
+                                                        "typeDescriptions": {
+                                                            "typeIdentifier": "t_magic_block",
+                                                            "typeString": "block"
+                                                        }
+                                                    },
+                                                    "id": 12963,
+                                                    "isConstant": false,
+                                                    "isLValue": false,
+                                                    "isPure": false,
+                                                    "lValueRequested": false,
+                                                    "memberName": "timestamp",
+                                                    "nodeType": "MemberAccess",
+                                                    "src": "618:15:29",
+                                                    "typeDescriptions": {
+                                                        "typeIdentifier": "t_uint256",
+                                                        "typeString": "uint256"
+                                                    }
+                                                }
+                                            ],
+                                            "expression": {
+                                                "argumentTypes": [
+                                                    {
+                                                        "typeIdentifier": "t_uint256",
+                                                        "typeString": "uint256"
+                                                    }
+                                                ],
+                                                "id": 12961,
+                                                "isConstant": false,
+                                                "isLValue": false,
+                                                "isPure": true,
+                                                "lValueRequested": false,
+                                                "nodeType": "ElementaryTypeNameExpression",
+                                                "src": "610:7:29",
+                                                "typeDescriptions": {
+                                                    "typeIdentifier": "t_type$_t_uint128_$",
+                                                    "typeString": "type(uint128)"
+                                                },
+                                                "typeName": {
+                                                    "id": 12960,
+                                                    "name": "uint128",
+                                                    "nodeType": "ElementaryTypeName",
+                                                    "src": "610:7:29",
+                                                    "typeDescriptions": {}
+                                                }
+                                            },
+                                            "id": 12964,
+                                            "isConstant": false,
+                                            "isLValue": false,
+                                            "isPure": false,
+                                            "kind": "typeConversion",
+                                            "lValueRequested": false,
+                                            "names": [],
+                                            "nodeType": "FunctionCall",
+                                            "src": "610:24:29",
+                                            "tryCall": false,
+                                            "typeDescriptions": {
+                                                "typeIdentifier": "t_uint128",
+                                                "typeString": "uint128"
+                                            }
+                                        },
+                                        "src": "589:45:29",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_uint128",
+                                            "typeString": "uint128"
+                                        }
+                                    },
+                                    "id": 12966,
+                                    "nodeType": "ExpressionStatement",
+                                    "src": "589:45:29"
+                                },
+                                {
+                                    "expression": {
+                                        "arguments": [],
+                                        "expression": {
+                                            "argumentTypes": [],
+                                            "id": 12967,
+                                            "name": "_rewardPayout",
+                                            "nodeType": "Identifier",
+                                            "overloadedDeclarations": [],
+                                            "referencedDeclaration": 12987,
+                                            "src": "644:13:29",
+                                            "typeDescriptions": {
+                                                "typeIdentifier": "t_function_internal_nonpayable$__$returns$__$",
+                                                "typeString": "function ()"
+                                            }
+                                        },
+                                        "id": 12968,
+                                        "isConstant": false,
+                                        "isLValue": false,
+                                        "isPure": false,
+                                        "kind": "functionCall",
+                                        "lValueRequested": false,
+                                        "names": [],
+                                        "nodeType": "FunctionCall",
+                                        "src": "644:15:29",
+                                        "tryCall": false,
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_tuple$__$",
+                                            "typeString": "tuple()"
+                                        }
+                                    },
+                                    "id": 12969,
+                                    "nodeType": "ExpressionStatement",
+                                    "src": "644:15:29"
+                                },
+                                {
+                                    "eventCall": {
+                                        "arguments": [
+                                            {
+                                                "expression": {
+                                                    "id": 12971,
+                                                    "name": "msg",
+                                                    "nodeType": "Identifier",
+                                                    "overloadedDeclarations": [],
+                                                    "referencedDeclaration": 4294967281,
+                                                    "src": "685:3:29",
+                                                    "typeDescriptions": {
+                                                        "typeIdentifier": "t_magic_message",
+                                                        "typeString": "msg"
+                                                    }
+                                                },
+                                                "id": 12972,
+                                                "isConstant": false,
+                                                "isLValue": false,
+                                                "isPure": false,
+                                                "lValueRequested": false,
+                                                "memberName": "sender",
+                                                "nodeType": "MemberAccess",
+                                                "src": "685:10:29",
+                                                "typeDescriptions": {
+                                                    "typeIdentifier": "t_address",
+                                                    "typeString": "address"
+                                                }
+                                            },
+                                            {
+                                                "arguments": [],
+                                                "expression": {
+                                                    "argumentTypes": [],
+                                                    "id": 12973,
+                                                    "name": "getReward",
+                                                    "nodeType": "Identifier",
+                                                    "overloadedDeclarations": [],
+                                                    "referencedDeclaration": 12984,
+                                                    "src": "697:9:29",
+                                                    "typeDescriptions": {
+                                                        "typeIdentifier": "t_function_internal_view$__$returns$_t_uint256_$",
+                                                        "typeString": "function () view returns (uint256)"
+                                                    }
+                                                },
+                                                "id": 12974,
+                                                "isConstant": false,
+                                                "isLValue": false,
+                                                "isPure": false,
+                                                "kind": "functionCall",
+                                                "lValueRequested": false,
+                                                "names": [],
+                                                "nodeType": "FunctionCall",
+                                                "src": "697:11:29",
+                                                "tryCall": false,
+                                                "typeDescriptions": {
+                                                    "typeIdentifier": "t_uint256",
+                                                    "typeString": "uint256"
+                                                }
+                                            },
+                                            {
+                                                "id": 12975,
+                                                "name": "rebalanceTimestamp",
+                                                "nodeType": "Identifier",
+                                                "overloadedDeclarations": [],
+                                                "referencedDeclaration": 12924,
+                                                "src": "710:18:29",
+                                                "typeDescriptions": {
+                                                    "typeIdentifier": "t_uint128",
+                                                    "typeString": "uint128"
+                                                }
+                                            }
+                                        ],
+                                        "expression": {
+                                            "argumentTypes": [
+                                                {
+                                                    "typeIdentifier": "t_address",
+                                                    "typeString": "address"
+                                                },
+                                                {
+                                                    "typeIdentifier": "t_uint256",
+                                                    "typeString": "uint256"
+                                                },
+                                                {
+                                                    "typeIdentifier": "t_uint128",
+                                                    "typeString": "uint128"
+                                                }
+                                            ],
+                                            "id": 12970,
+                                            "name": "Rebalance",
+                                            "nodeType": "Identifier",
+                                            "overloadedDeclarations": [],
+                                            "referencedDeclaration": 12932,
+                                            "src": "675:9:29",
+                                            "typeDescriptions": {
+                                                "typeIdentifier": "t_function_event_nonpayable$_t_address_$_t_uint256_$_t_uint128_$returns$__$",
+                                                "typeString": "function (address,uint256,uint128)"
+                                            }
+                                        },
+                                        "id": 12976,
+                                        "isConstant": false,
+                                        "isLValue": false,
+                                        "isPure": false,
+                                        "kind": "functionCall",
+                                        "lValueRequested": false,
+                                        "names": [],
+                                        "nodeType": "FunctionCall",
+                                        "src": "675:54:29",
+                                        "tryCall": false,
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_tuple$__$",
+                                            "typeString": "tuple()"
+                                        }
+                                    },
+                                    "id": 12977,
+                                    "nodeType": "EmitStatement",
+                                    "src": "670:59:29"
+                                }
+                            ]
+                        },
+                        "functionSelector": "7d7c2a1c",
+                        "id": 12979,
+                        "implemented": true,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "rebalance",
+                        "nameLocation": "467:9:29",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 12948,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "476:2:29"
+                        },
+                        "returnParameters": {
+                            "id": 12949,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "494:0:29"
+                        },
+                        "scope": 12991,
+                        "src": "458:278:29",
+                        "stateMutability": "nonpayable",
+                        "virtual": true,
+                        "visibility": "public"
+                    },
+                    {
+                        "functionSelector": "3d18b912",
+                        "id": 12984,
+                        "implemented": false,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "getReward",
+                        "nameLocation": "751:9:29",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 12980,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "760:2:29"
+                        },
+                        "returnParameters": {
+                            "id": 12983,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 12982,
+                                    "mutability": "mutable",
+                                    "name": "",
+                                    "nameLocation": "-1:-1:-1",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 12984,
+                                    "src": "792:7:29",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_uint256",
+                                        "typeString": "uint256"
+                                    },
+                                    "typeName": {
+                                        "id": 12981,
+                                        "name": "uint256",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "792:7:29",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_uint256",
+                                            "typeString": "uint256"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "791:9:29"
+                        },
+                        "scope": 12991,
+                        "src": "742:59:29",
+                        "stateMutability": "view",
+                        "virtual": true,
+                        "visibility": "public"
+                    },
+                    {
+                        "id": 12987,
+                        "implemented": false,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "_rewardPayout",
+                        "nameLocation": "816:13:29",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 12985,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "829:2:29"
+                        },
+                        "returnParameters": {
+                            "id": 12986,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "848:0:29"
+                        },
+                        "scope": 12991,
+                        "src": "807:42:29",
+                        "stateMutability": "nonpayable",
+                        "virtual": true,
+                        "visibility": "internal"
+                    },
+                    {
+                        "id": 12990,
+                        "implemented": false,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "_rebalance",
+                        "nameLocation": "864:10:29",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 12988,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "874:2:29"
+                        },
+                        "returnParameters": {
+                            "id": 12989,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "893:0:29"
+                        },
+                        "scope": 12991,
+                        "src": "855:39:29",
+                        "stateMutability": "nonpayable",
+                        "virtual": true,
+                        "visibility": "internal"
+                    }
+                ],
+                "scope": 12992,
+                "src": "68:828:29",
+                "usedErrors": []
+            }
+        ],
+        "src": "42:855:29"
+    },
+    "functionHashes": {
+        "getReward()": "3d18b912",
+        "rebalance()": "7d7c2a1c",
+        "rebalanceInterval()": "16d1d916",
+        "rebalanceRequired()": "3a794246",
+        "rebalanceTimestamp()": "adbd0f8f"
+    },
+    "gasEstimates": null
+}
