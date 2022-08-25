@@ -2,8 +2,8 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "../src/ModuleFactory.sol";
-import "../src/modules/CurvePlainPoolModule.sol";
+import "src/ModuleFactory.sol";
+import "src/modules/CurvePlainPoolModule.sol";
 import "./mocks/MockModule.sol";
 
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
@@ -26,14 +26,19 @@ contract CurvePlainPoolModuleTest is Test {
     function setUp() public {
         factory = new ModuleFactory(owner);
         vm.startPrank(owner);
-            implementation = new CurvePlainPoolModule(owner, "Construct CurvePlainPool Module", "const-curve-plain", curveFactory, maxSlippage);
+            implementation = new CurvePlainPoolModule(
+                owner,
+                "Construct CurvePlainPool Module",
+                "const-curve-plain",
+                curveFactory,
+                maxSlippage
+            );
             mockImplementation = new MockModule(owner, "Mock Module", "const-mock");
-            uint256 index0 = factory.addImplementation(address(implementation), false, true);
-            uint256 index1 = factory.addImplementation(address(mockImplementation), false, false);
+            factory.addImplementation(address(implementation), false, true);
+            factory.addImplementation(address(mockImplementation), false, false);
             factory.setPeggedAssets(asset, product, true);
-            module = ModularERC4626(factory.deployModule(index0, asset, product, source));
-            target = ModularERC4626(factory.deployModule(index1, product, asset, address(module)));
-            factory.initializeStrategy(address(module), address(target));    
+            module = ModularERC4626(factory.deployModule(address(implementation), asset, product, source));
+            target = ModularERC4626(factory.deployModule(address(mockImplementation), product, asset, address(module))); 
         vm.stopPrank();
 
     }
@@ -96,7 +101,8 @@ contract CurvePlainPoolModuleTest is Test {
         assertEq(ERC20(asset).balanceOf(address(module)), 0, "Module should have no asset balance");
         assertEq(poolReceived, assets, "Pool received all the assets");
         assertEq(targetReceived, poolMinted, "Target received all the products");
-        assertTrue(_eqApprox(assets, module.totalAssets(), 1e2), "totalAssets of module equal deposited assets"); // dust tollerated
+        assertTrue(_eqApprox(assets, module.totalAssets(), 1e2), 
+            "totalAssets of module equal deposited assets"); // dust tollerated
     }
 
     function testCannotDepositZero() public {
@@ -132,9 +138,12 @@ contract CurvePlainPoolModuleTest is Test {
         assertGt(ERC20(target).balanceOf(address(module)), 0, "Module received target shares");
         assertEq(ERC20(asset).balanceOf(address(module)), 0, "Module should have no asset balance");
         assertEq(poolBalanceAfter - poolBalanceBefore, assetsDeposited, "Pool received all the assets");
-        assertEq(targetBalanceAfter - targetBalanceBefore, poolSupplyAfter - poolSupplyBefore, "Target received all the products");
-        assertTrue(_eqApprox(shares, module.balanceOf(source), 1e2), "user received correct amount of shares"); // dust tollerated
-        assertTrue(_eqApprox(assetsDeposited, module.totalAssets(), 1e2), "totalAssets of module equal deposited assets"); // dust tollerated
+        assertEq(targetBalanceAfter - targetBalanceBefore, poolSupplyAfter - poolSupplyBefore, 
+            "Target received all the products");
+        assertTrue(_eqApprox(shares, module.balanceOf(source), 1e2), 
+            "user received correct amount of shares"); // dust tollerated
+        assertTrue(_eqApprox(assetsDeposited, module.totalAssets(), 1e2), 
+            "totalAssets of module equal deposited assets"); // dust tollerated
     }
 
     function testWithdraw(uint256 assets) public {
@@ -161,8 +170,10 @@ contract CurvePlainPoolModuleTest is Test {
 
         assertEq(sharesBefore - sharesAfter, sharesBurnt, "user burnt the correct amount of shares");
         assertGt(targetBalanceBefore - targetBalanceAfter, 0, "module burnt pool shares");
-        assertTrue(_eqApprox(assets, assetBalanceAfter - assetBalanceBefore, 1e2), "user withdrew the correct amount of assets"); // dust tollerated
-        assertTrue(_eqApprox(assets, poolBalanceBefore - poolBalanceAfter, 1e2), "pool transfered the correct amount of assets"); // dust tollerated
+        assertTrue(_eqApprox(assets, assetBalanceAfter - assetBalanceBefore, 1e2),
+            "user withdrew the correct amount of assets"); // dust tollerated
+        assertTrue(_eqApprox(assets, poolBalanceBefore - poolBalanceAfter, 1e2),
+            "pool transfered the correct amount of assets"); // dust tollerated
     }
 
     function testRedeem(uint256 shares) public {

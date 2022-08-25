@@ -156,15 +156,12 @@ contract YearnConvexModule is ModularERC4626, YearnBaseWrapper {
                             MODULAR LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function getModuleApr() public view override returns (uint256) {
+    function getModuleApr() public view override returns (int256) {
         VaultAPI bestVault = bestVault();
         uint256 managementFee = bestVault.managementFee();
         uint256 performanceFee = bestVault.performanceFee();
-        console.log("managementFee: ", managementFee);
-        console.log("performanceFee: ", performanceFee);
         uint256 grossApr = getGrossApr();
-        console.log("gross apr: ", grossApr);
-        return grossApr.mulDivDown((1e18 - (performanceFee * 1e14)), 1e18) - (managementFee * 1e14);
+        return int256(grossApr.mulDivDown((1e18 - (performanceFee * 1e14)), 1e18)) - int256((managementFee * 1e14));
     }
 
     function getGrossApr() internal view returns (uint256) {
@@ -175,7 +172,6 @@ contract YearnConvexModule is ModularERC4626, YearnBaseWrapper {
         uint256 rewardTokenPrice = oracle.getAssetPrice(rewardToken);
         uint256 rewardApr = getRewardApr(mainRewardsContract);
         uint256 grossApr = rewardApr.mulDivDown(rewardTokenPrice, assetPrice);
-        console.log("gross apr: ", grossApr);
 
         if (rewardToken == CRV) {
             //deduct keepCRV from CRV rewards
@@ -188,30 +184,21 @@ contract YearnConvexModule is ModularERC4626, YearnBaseWrapper {
             grossApr += cvxMint.mulDivDown(cvxPrice, assetPrice);
         }
 
-        console.log("gross apr: ", grossApr);
 
         uint256 extraRewardsLength = IConvexRewards(mainRewardsContract).extraRewardsLength();
-        console.log("extraRewardsLength: ", extraRewardsLength);
 
         if (extraRewardsLength > 0) {
             for (uint256 i = 0; i < extraRewardsLength; i++) {
                 address extraRewardsContract = IConvexRewards(mainRewardsContract).extraRewards(i);
-                console.log("extraRewardsContract: ", extraRewardsContract);
                 address extraRewardToken = getRewardToken(extraRewardsContract);
-                console.log("extraRewardToken: ", extraRewardToken);
                 uint256 extraRewardTokenPrice = oracle.getAssetPrice(extraRewardToken);
-                console.log("extraRewardTokenPrice: ", extraRewardTokenPrice);
                 uint256 extraRewardApr = getRewardApr(extraRewardsContract);
-                console.log("extraRewardApr: ", extraRewardApr);
                 grossApr += extraRewardApr.mulDivDown(extraRewardTokenPrice, assetPrice);
-                console.log("gross apr: ", grossApr);
             }
         }
         console.log("gross apr: ", grossApr);
         return grossApr;
     }
-
-    function moduleProfit() external view returns (uint256) {}
 
     /*//////////////////////////////////////////////////////////////
                         DEPOSIT/WITHDRAWAL LOGIC

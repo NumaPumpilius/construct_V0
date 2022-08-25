@@ -2,8 +2,8 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "../src/ModuleFactory.sol";
-import "../src/modules/AaveBiassetModule.sol";
+import "src/ModuleFactory.sol";
+import "src/modules/AaveBiassetModule.sol";
 import "./mocks/MockModule.sol";
 
 contract AaveBiassetModuleTest is Test {
@@ -28,16 +28,27 @@ contract AaveBiassetModuleTest is Test {
     uint64 recenteringSpeed = 100000;
     address owner = address(1);
 
+
     function setUp() public {
         factory = new ModuleFactory(owner);
-        implementation = new AaveBiassetModule(owner, "Construct AaveBiasset Module", "const-aave-bi", aaveLendingPool, aaveDataProvider, aaveOracle, targetLtv, lowerBoundLtv, upperBoundLtv, rebalanceInterval, recenteringSpeed);
+        implementation = new AaveBiassetModule(
+            owner,
+            "Construct AaveBiasset Module",
+            "const-aave-bi", aaveLendingPool,
+            aaveDataProvider,
+            aaveOracle,
+            targetLtv,
+            lowerBoundLtv,
+            upperBoundLtv,
+            rebalanceInterval,
+            recenteringSpeed
+        );
         mockImplementation = new MockModule(owner, "Mock Module", "const-mock");
         vm.startPrank(owner);
-            uint256 index0 = factory.addImplementation(address(implementation), true, false);
-            uint256 index1 = factory.addImplementation(address(mockImplementation), false, false);
-            module = ModularERC4626(factory.deployModule(index0, asset, product, source));
-            target = ModularERC4626(factory.deployModule(index1, product, asset, address(module)));
-            factory.initializeStrategy(address(module), address(target));    
+            factory.addImplementation(address(implementation), true, false);
+            factory.addImplementation(address(mockImplementation), false, false);
+            module = ModularERC4626(factory.deployModule(address(implementation), asset, product, source));
+            target = ModularERC4626(factory.deployModule(address(mockImplementation), product, asset, address(module))); 
         vm.stopPrank();
     }
 
@@ -98,7 +109,9 @@ contract AaveBiassetModuleTest is Test {
         assertEq(ERC20(asset).balanceOf(address(module)), 0, "Module should have no asset balance");
         assertEq(poolReceived, assets, "Pool received all the assets");
         // assertEq(targetReceived, poolMinted, "Target received all the products");
-        assertTrue(_eqApprox(assets, module.totalAssets(), 1e5), "totalAssets of module equal deposited assets"); // dust tollerated
+        assertTrue(_eqApprox(assets, module.totalAssets(), 1e5), 
+            "totalAssets of module equal deposited assets"
+        ); // dust tollerated
     }
 
     function testCannotDepositZero() public {
@@ -128,7 +141,9 @@ contract AaveBiassetModuleTest is Test {
         assertEq(assetsDeposited, poolReceived, "pool received all the assets");
         assertEq(sourceBalance, shares, "source received all the minted shares");
         assertEq(ERC20(asset).balanceOf(address(module)), 0, "Module should have no asset balance");
-        assertTrue(_eqApprox(assetsDeposited, module.totalAssets(), 1e5), "totalAssets of module equal deposited assets"); 
+        assertTrue(_eqApprox(assetsDeposited, module.totalAssets(), 1e5), 
+            "totalAssets of module equal deposited assets"
+        ); 
     }
 
     function testWithdraw(uint256 assets) public {
@@ -153,7 +168,9 @@ contract AaveBiassetModuleTest is Test {
 
         assertEq(sharesBefore - sharesAfter, sharesBurnt, "user burnt the correct amount of shares");
         assertEq(assets, assetBalanceAfter - assetBalanceBefore, "user received the correct amount of assets");
-        assertEq(assets, poolBalanceBefore - poolBalanceAfter, "pool transfered the correct amount of assets"); // no dust tollerated
+        assertEq(assets, poolBalanceBefore - poolBalanceAfter, 
+            "pool transfered the correct amount of assets"
+        ); // no dust tollerated
     }
 
     function testRedeem(uint256 shares) public {

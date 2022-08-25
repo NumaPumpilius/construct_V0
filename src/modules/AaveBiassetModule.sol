@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.10;
 
-import "../impl/ModularERC4626.sol";
-import "../interfaces/IAaveLendingPool.sol";
-import "../interfaces/IAaveProtocolDataProvider.sol";
-import "../interfaces/IPriceOracleGetter.sol";
-import "../impl/Rebalancing.sol";
+import "src/impl/ModularERC4626.sol";
+import "src/interfaces/IAaveLendingPool.sol";
+import "src/interfaces/IAaveProtocolDataProvider.sol";
+import "src/interfaces/IPriceOracleGetter.sol";
+import "src/impl/Rebalancing.sol";
 
 import "openzeppelin-contracts/contracts/utils/math/Math.sol";
 
@@ -163,16 +163,53 @@ contract AaveBiassetModule is ModularERC4626, Rebalancing {
     }
 
     /*//////////////////////////////////////////////////////////////
-                            ACCOUNTING LOGIC
+                            AAVE GETTERS
+    //////////////////////////////////////////////////////////////*/
+
+    function getDebtETH() public view returns (uint256) {
+        uint256 debtETH;
+        (, debtETH, , , , ) = lendingPool.getUserAccountData(address(this));
+        return debtETH;
+    }
+
+    function getCollateralETH() public view returns (uint256) {
+        uint256 collateralETH;
+        (collateralETH, , , , , ) = lendingPool.getUserAccountData(address(this));
+        return collateralETH;
+    }
+
+    function getCurrentLtv() public view returns (uint256) {
+        uint256 collateralETH;
+        uint256 debtETH;
+        (collateralETH, debtETH, , , , ) = lendingPool.getUserAccountData(address(this));
+        uint256 currentLtv = debtETH.mulDivUp(1e6, collateralETH);
+        return currentLtv;
+    }
+
+
+    /*//////////////////////////////////////////////////////////////
+                            MODULAR LOGIC
     //////////////////////////////////////////////////////////////*/
 
     function totalAssets() public view override returns (uint256) {
         return ERC20(aToken).balanceOf(address(this));
     }
 
-    /*//////////////////////////////////////////////////////////////
-                            MODULAR LOGIC
-    //////////////////////////////////////////////////////////////*/
+    function getModuleApr() public view override returns (int256) {
+        uint256 depositRate;
+        ( , , , depositRate, , , , , , ) = dataProvider.getReserveData(address(asset));
+        uint256 borrowRate;
+        ( , , , , , borrowRate, , , , ) = dataProvider.getReserveData(address(product));
+        uint256 currentLtv = getCurrentLtv();
+
+        int256 moduleApr = int256(depositRate) - int256(borrowRate.mulDivUp(currentLtv, 1e6));
+        return moduleApr;
+    }
+
+    function getCapitalUtilization() public view override returns (uint256) {
+        return getCurrentLtv();
+    }
+
 
     /*//////////////////////////////////////////////////////////////
                             REBALANCING LOGIC
@@ -183,10 +220,7 @@ contract AaveBiassetModule is ModularERC4626, Rebalancing {
             return true;
         }
 
-        uint256 collateralETH;
-        uint256 debtETH;
-        (collateralETH, debtETH, , , , ) = lendingPool.getUserAccountData(address(this));
-        uint256 currentLtv = debtETH.mulDivUp(1e6, collateralETH);
+        uint256 currentLtv = getCurrentLtv();
 
         if (currentLtv < uint256(lowerBoundLtv)) {
             return true;
@@ -259,27 +293,5 @@ contract AaveBiassetModule is ModularERC4626, Rebalancing {
         _mint(msg.sender, getReward());
     }
 
-    /*//////////////////////////////////////////////////////////////
-                            AAVE GETTERS
-    //////////////////////////////////////////////////////////////*/
 
-    function getDebtETH() public view returns (uint256) {
-        uint256 debtETH;
-        (, debtETH, , , , ) = lendingPool.getUserAccountData(address(this));
-        return debtETH;
-    }
-
-    function getCollateralETH() public view returns (uint256) {
-        uint256 collateralETH;
-        (collateralETH, , , , , ) = lendingPool.getUserAccountData(address(this));
-        return collateralETH;
-    }
-
-    function getCurrentLtv() public view returns (uint256) {
-        uint256 collateralETH;
-        uint256 debtETH;
-        (collateralETH, debtETH, , , , ) = lendingPool.getUserAccountData(address(this));
-        uint256 currentLtv = debtETH.mulDivUp(1e6, collateralETH);
-        return currentLtv;
-    }
 }

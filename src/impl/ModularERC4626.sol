@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.13;
 
-import "./ERC4626.sol";
+import "src/impl/ERC4626.sol";
+import "src/interfaces/IModularERC4626.sol";
 
-abstract contract ModularERC4626 is ERC4626 {
+abstract contract ModularERC4626 is ERC4626, IModularERC4626 {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
@@ -14,6 +15,7 @@ abstract contract ModularERC4626 is ERC4626 {
     ERC20 public product;
     ERC4626 public source;
     ERC4626 public target;
+    ERC4626 public strategy;
 
     address public factory;
     address public implementation;
@@ -58,7 +60,7 @@ abstract contract ModularERC4626 is ERC4626 {
         address _implementation
     ) public virtual;
 
-    function initializeStrategy(address _target) public {
+    function setTarget(address _target) external {
         require(address(target) == address(0), "!initialized");
         require(msg.sender == factory, "!factory");
         target = ERC4626(_target);
@@ -103,6 +105,26 @@ abstract contract ModularERC4626 is ERC4626 {
     }
 
     /*//////////////////////////////////////////////////////////////
+                            MODULAR GETTERS
+    //////////////////////////////////////////////////////////////*/
+
+    function getAsset() external view returns (address) {
+        return address(asset);
+    }
+    
+    function getProduct() external view returns (address) {
+        return address(product);
+    }
+
+    function getSource() external view returns (address) {
+        return address(source);
+    }
+
+    function getTarget() external view returns (address) {
+        return address(target);
+    }
+
+    /*//////////////////////////////////////////////////////////////
                             MODULAR LOGIC
     //////////////////////////////////////////////////////////////*/
 
@@ -114,9 +136,14 @@ abstract contract ModularERC4626 is ERC4626 {
         }
     }
 
-    function getModuleApr() public view virtual returns (uint256) {
-        return uint256(0);
+    function getCapitalUtilization() public view virtual returns (uint256) {
+        return uint256(1e6); // 100%
     }
+
+    function getModuleApr() public view virtual returns (int256) {
+        return int256(0); // 0%
+    }
+
 
     /*//////////////////////////////////////////////////////////////
                         NON-TRANSFERABLE SHARES

@@ -51,10 +51,18 @@ contract YearnConvexModuleTest is Test {
         fallbackOracle = new UniswapV3Oracle(weth, usdc, uniV3Factory, owner);
         oracle = new ConstructOracle(owner, address(fallbackOracle));
         factory = new ModuleFactory(owner);
-        implementation = new YearnConvexModule(owner, "Construct YearnConvex Module", "const-ycvx", address(oracle), yearnRegistry, yearnStrategyHelper, convexBooster);
+        implementation = new YearnConvexModule(
+            owner,
+            "Construct YearnConvex Module",
+            "const-ycvx",
+            address(oracle),
+            yearnRegistry,
+            yearnStrategyHelper,
+            convexBooster
+        );
         vm.startPrank(owner);
-            uint256 index = factory.addImplementation(address(implementation), false, false);
-            module = ModularERC4626(factory.deployModule(index, asset, product, source));
+            factory.addImplementation(address(implementation), false, false);
+            module = ModularERC4626(factory.deployModule(address(implementation), asset, product, source));
             ConstructOracle(address(oracle)).setAssetSource(chainlinkAssets, chainlinkSources);
         vm.stopPrank();
     }
@@ -110,7 +118,8 @@ contract YearnConvexModuleTest is Test {
         assertGt(ERC20(yVault).balanceOf(address(module)), 0, "Module received yVault shares");
         assertEq(ERC20(asset).balanceOf(address(module)), 0, "Module should have no asset balance");
         assertEq(yVaultReceived, assets, "yVault received all the assets");
-        assertTrue(_eqWithDust(assets, module.totalAssets()), "totalAssets of module equal deposited assets"); // dust tollerated
+        assertTrue(_eqWithDust(assets, module.totalAssets()),
+            "totalAssets of module equal deposited assets"); // dust tollerated
     }
 
     function testCannotDepositZero() public {
@@ -144,7 +153,8 @@ contract YearnConvexModuleTest is Test {
         assertGt(ERC20(yVault).balanceOf(address(module)), 0, "Module received yVault shares");
         assertEq(ERC20(asset).balanceOf(address(module)), 0, "Module transferred all assets to the yVault");
         assertEq(yVaultReceived, sourceSpent, "yVault received all the assets");
-        assertTrue(_eqWithDust(assetsDeposited, module.totalAssets()), "totalAssets of module equal deposited assets"); // dust tollerated
+        assertTrue(_eqWithDust(assetsDeposited, module.totalAssets()),
+            "totalAssets of module equal deposited assets"); // dust tollerated
     }
 
     function testWithdraw(uint256 assets) public {
@@ -171,8 +181,10 @@ contract YearnConvexModuleTest is Test {
 
         assertEq(sharesBefore - sharesAfter, sharesBurnt, "user burnt the correct amount of shares");
         assertGt(ySharesBefore - ySharesAfter, 0, "module burnt yVault shares");
-        assertTrue(_eqWithDust(assets, assetBalanceAfter - sourceBalanceBefore), "user withdrew the correct amount of assets"); // dust tollerated
-        assertTrue(_eqWithDust(assets, yVaultBalBefore - yVaultBalAfter), "yVault transfered the correct amount of assets"); // dust tollerated
+        assertTrue(_eqWithDust(assets, assetBalanceAfter - sourceBalanceBefore),
+            "user withdrew the correct amount of assets"); // dust tollerated
+        assertTrue(_eqWithDust(assets, yVaultBalBefore - yVaultBalAfter),
+            "yVault transfered the correct amount of assets"); // dust tollerated
     }
 
     function testRedeem(uint256 shares) public {
@@ -200,16 +212,19 @@ contract YearnConvexModuleTest is Test {
         uint256 ySharesAfter = ERC20(yVault).balanceOf(address(module));
         uint256 yVaultBalAfter = ERC20(asset).balanceOf(yVault);
 
-        assertTrue(_eqWithDust(shares, sharesBefore - sharesAfter), "user burnt the correct amount of shares"); // dust tollerated
+        assertTrue(_eqWithDust(shares, sharesBefore - sharesAfter),
+            "user burnt the correct amount of shares"); // dust tollerated
         assertGt(ySharesBefore - ySharesAfter, 0, "module burnt yVault shares");
-        assertTrue(_eqWithDust(module.convertToAssets(shares), assetBalanceAfter - sourceBalanceBefore), "user withdrew the correct amount of assets"); // dust tollerated
-        assertTrue(_eqWithDust(module.convertToAssets(shares), yVaultBalBefore - yVaultBalAfter), "yVault transfered the correct amount of assets"); // dust tollerated
+        assertTrue(_eqWithDust(module.convertToAssets(shares), assetBalanceAfter - sourceBalanceBefore),
+            "user withdrew the correct amount of assets"); // dust tollerated
+        assertTrue(_eqWithDust(module.convertToAssets(shares), yVaultBalBefore - yVaultBalAfter),
+            "yVault transfered the correct amount of assets"); // dust tollerated
     }
 
     function testGetModuleApr() public {
-        uint256 apr = module.getModuleApr();
+        int256 apr = module.getModuleApr();
         assertGt(apr, 0, "returns apr");
-        console.log("final net apr: ", apr);
+        //console.log("final net apr: ", apr);
     }
 
 }

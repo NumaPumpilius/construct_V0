@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.10;
 
-import {DataTypes} from "./DataTypes.sol";
+import {DataTypes} from "src/interfaces/DataTypes.sol";
 
 interface IAaveLendingPool {
     /**

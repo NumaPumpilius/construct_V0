@@ -1,0 +1,193 @@
+{
+    "contractName": "ICurveFactory",
+    "abi": [
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "pool",
+                    "type": "address"
+                }
+            ],
+            "name": "get_coins",
+            "outputs": [
+                {
+                    "internalType": "address[4]",
+                    "name": "",
+                    "type": "address[4]"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        }
+    ],
+    "metadata": "{\"compiler\":{\"version\":\"0.8.13+commit.abaa5c0e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"pool\",\"type\":\"address\"}],\"name\":\"get_coins\",\"outputs\":[{\"internalType\":\"address[4]\",\"name\":\"\",\"type\":\"address[4]\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"/Users/misha/Library/Mobile Documents/com~apple~CloudDocs/Dev/construct-finance/construct_V0/src/interfaces/ICurveFactory.sol\":\"ICurveFactory\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/misha/Library/Mobile Documents/com~apple~CloudDocs/Dev/construct-finance/construct_V0/src/interfaces/ICurveFactory.sol\":{\"keccak256\":\"0xcc71c2cb111d0cf72f5fba16d54260fc433d69f331201c00cf7f9905d65e63b4\",\"license\":\"AGPL-3.0-only\",\"urls\":[\"bzz-raw://3a3b2e8c292953c10672d49436f18d8fbb3fb5be0c957e273f426508ab42dbae\",\"dweb:/ipfs/QmV6yuoUTVrJXiJnTEjuep41LXQYNXiYjgcQXN5rNoJNvk\"]}},\"version\":1}",
+    "bytecode": "",
+    "deployedBytecode": "",
+    "sourceMap": "",
+    "deployedSourceMap": "",
+    "sourcePath": "/Users/misha/Library/Mobile Documents/com~apple~CloudDocs/Dev/construct-finance/construct_V0/src/interfaces/ICurveFactory.sol",
+    "compiler": {
+        "name": "solc",
+        "version": "0.8.13+commit.abaa5c0e"
+    },
+    "ast": {
+        "absolutePath": "/Users/misha/Library/Mobile Documents/com~apple~CloudDocs/Dev/construct-finance/construct_V0/src/interfaces/ICurveFactory.sol",
+        "exportedSymbols": {
+            "ICurveFactory": [
+                14872
+            ]
+        },
+        "id": 14873,
+        "license": "AGPL-3.0-only",
+        "nodeType": "SourceUnit",
+        "nodes": [
+            {
+                "id": 14862,
+                "literals": [
+                    "solidity",
+                    "^",
+                    "0.8",
+                    ".13"
+                ],
+                "nodeType": "PragmaDirective",
+                "src": "42:24:37"
+            },
+            {
+                "abstract": false,
+                "baseContracts": [],
+                "canonicalName": "ICurveFactory",
+                "contractDependencies": [],
+                "contractKind": "interface",
+                "fullyImplemented": false,
+                "id": 14872,
+                "linearizedBaseContracts": [
+                    14872
+                ],
+                "name": "ICurveFactory",
+                "nameLocation": "78:13:37",
+                "nodeType": "ContractDefinition",
+                "nodes": [
+                    {
+                        "functionSelector": "9ac90d3d",
+                        "id": 14871,
+                        "implemented": false,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "get_coins",
+                        "nameLocation": "107:9:37",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 14865,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 14864,
+                                    "mutability": "mutable",
+                                    "name": "pool",
+                                    "nameLocation": "125:4:37",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 14871,
+                                    "src": "117:12:37",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_address",
+                                        "typeString": "address"
+                                    },
+                                    "typeName": {
+                                        "id": 14863,
+                                        "name": "address",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "117:7:37",
+                                        "stateMutability": "nonpayable",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_address",
+                                            "typeString": "address"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "116:14:37"
+                        },
+                        "returnParameters": {
+                            "id": 14870,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 14869,
+                                    "mutability": "mutable",
+                                    "name": "",
+                                    "nameLocation": "-1:-1:-1",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 14871,
+                                    "src": "154:17:37",
+                                    "stateVariable": false,
+                                    "storageLocation": "memory",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_array$_t_address_$4_memory_ptr",
+                                        "typeString": "address[4]"
+                                    },
+                                    "typeName": {
+                                        "baseType": {
+                                            "id": 14866,
+                                            "name": "address",
+                                            "nodeType": "ElementaryTypeName",
+                                            "src": "154:7:37",
+                                            "stateMutability": "nonpayable",
+                                            "typeDescriptions": {
+                                                "typeIdentifier": "t_address",
+                                                "typeString": "address"
+                                            }
+                                        },
+                                        "id": 14868,
+                                        "length": {
+                                            "hexValue": "34",
+                                            "id": 14867,
+                                            "isConstant": false,
+                                            "isLValue": false,
+                                            "isPure": true,
+                                            "kind": "number",
+                                            "lValueRequested": false,
+                                            "nodeType": "Literal",
+                                            "src": "162:1:37",
+                                            "typeDescriptions": {
+                                                "typeIdentifier": "t_rational_4_by_1",
+                                                "typeString": "int_const 4"
+                                            },
+                                            "value": "4"
+                                        },
+                                        "nodeType": "ArrayTypeName",
+                                        "src": "154:10:37",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_array$_t_address_$4_storage_ptr",
+                                            "typeString": "address[4]"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "153:19:37"
+                        },
+                        "scope": 14872,
+                        "src": "98:75:37",
+                        "stateMutability": "view",
+                        "virtual": false,
+                        "visibility": "external"
+                    }
+                ],
+                "scope": 14873,
+                "src": "68:107:37",
+                "usedErrors": []
+            }
+        ],
+        "src": "42:134:37"
+    },
+    "functionHashes": {
+        "get_coins(address)": "9ac90d3d"
+    },
+    "gasEstimates": null
+}

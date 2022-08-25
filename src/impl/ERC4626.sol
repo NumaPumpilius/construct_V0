@@ -2,9 +2,9 @@
 pragma solidity ^0.8.13;
 
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
-import {SafeTransferLib} from "../utils/SafeTransferLib.sol";
+import {SafeTransferLib} from "src/utils/SafeTransferLib.sol";
 
-import "./ERC20.sol";
+import "src/impl/ERC20.sol";
 
 /// @notice Minimal ERC4626 tokenized Vault implementation.
 /// @notice Replaced constructor for __ERC20_init() to support EIP-1167 (https://eips.ethereum.org/EIPS/eip-1167)
