@@ -59,9 +59,9 @@ abstract contract ERC4626 is ERC20 {
 
         _mint(receiver, shares);
 
-        emit Deposit(msg.sender, receiver, assets, shares);
-
         afterDeposit(assets, shares);
+
+        emit Deposit(msg.sender, receiver, assets, shares);
     }
 
     function mint(uint256 shares, address receiver) public virtual returns (uint256 assets) {
@@ -72,9 +72,9 @@ abstract contract ERC4626 is ERC20 {
 
         _mint(receiver, shares);
 
-        emit Deposit(msg.sender, receiver, assets, shares);
-
         afterDeposit(assets, shares);
+
+        emit Deposit(msg.sender, receiver, assets, shares);
     }
 
     function withdraw(
@@ -94,9 +94,9 @@ abstract contract ERC4626 is ERC20 {
 
         _burn(owner, shares);
 
-        emit Withdraw(msg.sender, receiver, owner, assets, shares);
-
         asset.safeTransfer(receiver, assets);
+
+        emit Withdraw(msg.sender, receiver, owner, assets, shares);
     }
 
     function redeem(
@@ -117,9 +117,9 @@ abstract contract ERC4626 is ERC20 {
 
         _burn(owner, shares);
 
-        emit Withdraw(msg.sender, receiver, owner, assets, shares);
-
         asset.safeTransfer(receiver, assets);
+        
+        emit Withdraw(msg.sender, receiver, owner, assets, shares);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -141,7 +141,9 @@ abstract contract ERC4626 is ERC20 {
     }
 
     function previewDeposit(uint256 assets) public view virtual returns (uint256) {
-        return convertToShares(assets);
+        uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
+
+        return supply == 0 ? assets : assets.mulDivDown(supply, totalAssets());
     }
 
     function previewMint(uint256 shares) public view virtual returns (uint256) {

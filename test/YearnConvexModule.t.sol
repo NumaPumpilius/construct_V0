@@ -6,6 +6,8 @@ import "src/ModuleFactory.sol";
 import "src/modules/YearnConvexModule.sol";
 import "src/oracles/ConstructOracle.sol";
 import "src/oracles/UniswapV3Oracle.sol";
+import "./mocks/MockModule.sol";
+
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
 
@@ -16,7 +18,11 @@ contract YearnConvexModuleTest is Test {
     IPriceOracleGetter fallbackOracle;
     ModuleFactory factory;
     YearnConvexModule implementation;
+    MockModule mockImplementation;
+    ConstructStrategy strategyImpl;
+    ConstructStrategy strategy;
     ModularERC4626 module;
+    ModularERC4626 target;
 
     // contracts
     address yearnRegistry = 0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804;
@@ -30,7 +36,7 @@ contract YearnConvexModuleTest is Test {
     address usdc = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address crv = 0xD533a949740bb3306d119CC777fa900bA034cd52;
     address cvx = 0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B;
-    address asset = 0x9D0464996170c6B9e75eED71c68B99dDEDf279e8;
+    address asset = 0x9D0464996170c6B9e75eED71c68B99dDEDf279e8; // cvxcrv-f
     address product = usdc;
 
     // chainlink sources
@@ -43,54 +49,71 @@ contract YearnConvexModuleTest is Test {
     address[] chainlinkSources = [usdcSource, crvSource, cvxSource];
 
 
-    address source = 0xeAC7cec448a0256eD471e66e240f69C165835c5d;
+    address hodler = 0xeAC7cec448a0256eD471e66e240f69C165835c5d;
     address owner = address(1);
+    address[] strategyPath;
 
     
     function setUp() public {
         fallbackOracle = new UniswapV3Oracle(weth, usdc, uniV3Factory, owner);
         oracle = new ConstructOracle(owner, address(fallbackOracle));
         factory = new ModuleFactory(owner);
+        strategyImpl = new ConstructStrategy(address(factory));
         implementation = new YearnConvexModule(
             owner,
             "Construct YearnConvex Module",
-            "const-ycvx",
+            "YearnConvex",
             address(oracle),
             yearnRegistry,
             yearnStrategyHelper,
             convexBooster
         );
+        mockImplementation = new MockModule(owner, "Mock Module", "Mock");
         vm.startPrank(owner);
+            factory.setStrategyImplementation(address(strategyImpl));
             factory.addImplementation(address(implementation), false, false);
-            module = ModularERC4626(factory.deployModule(address(implementation), asset, product, source));
+            factory.addImplementation(address(mockImplementation), false, false);
             ConstructOracle(address(oracle)).setAssetSource(chainlinkAssets, chainlinkSources);
+            strategyPath = [asset, address(implementation), product, address(mockImplementation), asset];
+            strategy = ConstructStrategy(factory.createStrategy(strategyPath));
+            module = ModularERC4626(strategy.modulePath(0));
+            target = ModularERC4626(strategy.modulePath(1));
         vm.stopPrank();
     }
 
-    function _eqWithDust(uint256 expected, uint256 actual) internal pure returns (bool) {
-        uint256 dustDown = expected.mulDivDown(1e6 - 1, 1e6);
-        uint256 dustUp = expected.mulDivUp(1e6 + 1, 1e6);
-        return (actual >= dustDown && actual <= dustUp);
+    function _eqApprox(uint256 expected, uint256 actual, uint256 approx) internal pure returns (bool) {
+        uint256 min = expected.mulDivDown(approx - 1, approx);
+        uint256 max = expected.mulDivUp(approx + 1, approx);
+        return (actual >= min && actual <= max);
     }
 
     function testConfig() public {
+        //strategy config
+        assertEq(strategy.name(), "Strategy: cvxcrv-f-YearnConvex-USDC-Mock-cvxcrv-f");
+        assertEq(strategy.symbol(), "Strategy-cvxcrv-f");
+        assertEq(address(strategy.asset()), asset);
+        assertEq(strategy.factory(), address(factory));
+        assertEq(strategy.active(), true);
+
+        uint8 expectedDecimals = ERC20(asset).decimals();
+        uint8 moduleDecimals = strategy.decimals();
+        assertEq(moduleDecimals, expectedDecimals);
+
         // standard ModularERC4626 config
         assertEq(address(module.asset()), asset);
         assertEq(address(module.product()), product);
-        assertEq(address(module.source()), source);
+        assertEq(address(module.source()), address(strategy));
+        assertEq(address(module.target()), address(target));
         assertEq(module.factory(), address(factory));
 
         string memory expectedName = string("Construct YearnConvex Module: cvxcrv-f-USDC");
         string memory moduleName = module.name();
         assertEq(moduleName, expectedName);
 
-        string memory expectedSymbol = string("const-ycvx-cvxcrv-f-USDC");
+        string memory expectedSymbol = string("YearnConvex");
         string memory moduleSymbol = module.symbol();
         assertEq(moduleSymbol, expectedSymbol);
 
-        uint8 expectedDecimals = ERC20(asset).decimals();
-        uint8 moduleDecimals = module.decimals();
-        assertEq(moduleDecimals, expectedDecimals);
 
         // yearn specific config
         assertEq(address(YearnConvexModule(address(module)).token()), asset);
@@ -100,124 +123,122 @@ contract YearnConvexModuleTest is Test {
 
 
     function testDeposit(uint256 assets) public {
-        uint256 sourceBalance = ERC20(asset).balanceOf(source);
+        uint256 hodlerAssetBalance = ERC20(asset).balanceOf(hodler);
         uint256 yVaultBalBefore = ERC20(asset).balanceOf(yVault);
 
-        assets = bound(assets, 1e10, sourceBalance);
+        assets = bound(assets, 1e10, hodlerAssetBalance);
 
-        vm.startPrank(source);
-            ERC20(asset).approve(address(module), type(uint256).max);
-            uint256 sharesReceived = module.deposit(assets, source);
+        vm.startPrank(hodler);
+            ERC20(asset).approve(address(strategy), type(uint256).max);
+            uint256 sharesReceived = strategy.deposit(assets, hodler);
         vm.stopPrank();
 
-        uint256 balanceSource = module.balanceOf(source);
+        uint256 hodlerStrategyBalance = strategy.balanceOf(hodler);
         uint256 yVaultBalAfter = ERC20(asset).balanceOf(yVault);
         uint256 yVaultReceived = yVaultBalAfter - yVaultBalBefore;
 
-        assertEq(sharesReceived, balanceSource, "depositor received all the minted shares");
+        assertEq(sharesReceived, hodlerStrategyBalance, "depositor received all the minted shares");
         assertGt(ERC20(yVault).balanceOf(address(module)), 0, "Module received yVault shares");
         assertEq(ERC20(asset).balanceOf(address(module)), 0, "Module should have no asset balance");
         assertEq(yVaultReceived, assets, "yVault received all the assets");
-        assertTrue(_eqWithDust(assets, module.totalAssets()),
+        assertTrue(_eqApprox(assets, module.totalAssets(), 1e6),
             "totalAssets of module equal deposited assets"); // dust tollerated
     }
 
     function testCannotDepositZero() public {
         // can not recieve zero shares
-        vm.startPrank(source);
-            ERC20(asset).approve(address(module), type(uint256).max);
-            vm.expectRevert("!shares");
-            module.deposit(0, source);
+        vm.startPrank(hodler);
+            ERC20(asset).approve(address(strategy), type(uint256).max);
+            vm.expectRevert("ZERO_SHARES");
+            strategy.deposit(0, hodler);
         vm.stopPrank();
     }
 
     function testMint(uint256 shares) public {
-        uint256 sourceBalance = ERC20(asset).balanceOf(source);
+        uint256 hodlerAssetBalance = ERC20(asset).balanceOf(hodler);
         uint256 yVaultBalBefore = ERC20(asset).balanceOf(yVault);
 
-        shares = bound(shares, 1e10, sourceBalance);
+        shares = bound(shares, 1e10, hodlerAssetBalance);
 
-        vm.startPrank(source);
-            ERC20(asset).approve(address(module), type(uint256).max);
-            uint256 assetsDeposited = module.mint(shares, source);
+        vm.startPrank(hodler);
+            ERC20(asset).approve(address(strategy), type(uint256).max);
+            uint256 assetsDeposited = strategy.mint(shares, hodler);
         vm.stopPrank();
 
-        uint256 assetBalanceAfter = ERC20(asset).balanceOf(source);
-        uint256 balanceSource = module.balanceOf(source);
+        uint256 assetBalanceAfter = ERC20(asset).balanceOf(hodler);
+        uint256 hodlerStrategyBalance = strategy.balanceOf(hodler);
         uint256 yVaultBalAfter = ERC20(asset).balanceOf(yVault);
         uint256 yVaultReceived = yVaultBalAfter - yVaultBalBefore;
-        uint256 sourceSpent = sourceBalance - assetBalanceAfter;
+        uint256 sourceSpent = hodlerAssetBalance - assetBalanceAfter;
 
         assertEq(sourceSpent, assetsDeposited, "user spent the correct amount of assets");
-        assertEq(shares, balanceSource, "user received correct amount of shares");
+        assertEq(shares, hodlerStrategyBalance, "user received correct amount of shares");
         assertGt(ERC20(yVault).balanceOf(address(module)), 0, "Module received yVault shares");
         assertEq(ERC20(asset).balanceOf(address(module)), 0, "Module transferred all assets to the yVault");
         assertEq(yVaultReceived, sourceSpent, "yVault received all the assets");
-        assertTrue(_eqWithDust(assetsDeposited, module.totalAssets()),
+        assertTrue(_eqApprox(assetsDeposited, module.totalAssets(), 1e6),
             "totalAssets of module equal deposited assets"); // dust tollerated
     }
 
     function testWithdraw(uint256 assets) public {
-        uint256 sourceBalance = ERC20(asset).balanceOf(source);
+        uint256 hodlerAssetBalance = ERC20(asset).balanceOf(hodler);
 
-        assets = bound(assets, 1e10, sourceBalance / 2);
+        assets = bound(assets, 1e10, hodlerAssetBalance / 2);
 
-        vm.startPrank(source);
-            ERC20(asset).approve(address(module), type(uint256).max);
-            module.deposit(assets * 2, source);
+        vm.startPrank(hodler);
+            ERC20(asset).approve(address(strategy), type(uint256).max);
+            strategy.deposit(assets * 2, hodler);
 
             uint256 ySharesBefore = ERC20(yVault).balanceOf(address(module));
             uint256 yVaultBalBefore = ERC20(asset).balanceOf(yVault);
-            uint256 sourceBalanceBefore = ERC20(asset).balanceOf(source);
-            uint256 sharesBefore = module.balanceOf(source);
+            uint256 hodlerAssetBalanceBefore = ERC20(asset).balanceOf(hodler);
+            uint256 sharesBefore = strategy.balanceOf(hodler);
 
-            uint256 sharesBurnt = module.withdraw(assets, source, source);
+            uint256 sharesBurnt = strategy.withdraw(assets, hodler, hodler);
         vm.stopPrank();
 
-        uint256 assetBalanceAfter = ERC20(asset).balanceOf(source);
-        uint256 sharesAfter = module.balanceOf(source);
+        uint256 assetBalanceAfter = ERC20(asset).balanceOf(hodler);
+        uint256 sharesAfter = strategy.balanceOf(hodler);
         uint256 ySharesAfter = ERC20(yVault).balanceOf(address(module));
         uint256 yVaultBalAfter = ERC20(asset).balanceOf(yVault);
 
         assertEq(sharesBefore - sharesAfter, sharesBurnt, "user burnt the correct amount of shares");
         assertGt(ySharesBefore - ySharesAfter, 0, "module burnt yVault shares");
-        assertTrue(_eqWithDust(assets, assetBalanceAfter - sourceBalanceBefore),
+        assertTrue(_eqApprox(assets, assetBalanceAfter - hodlerAssetBalanceBefore, 1e6),
             "user withdrew the correct amount of assets"); // dust tollerated
-        assertTrue(_eqWithDust(assets, yVaultBalBefore - yVaultBalAfter),
+        assertTrue(_eqApprox(assets, yVaultBalBefore - yVaultBalAfter, 1e6),
             "yVault transfered the correct amount of assets"); // dust tollerated
     }
 
     function testRedeem(uint256 shares) public {
-        uint256 sourceBalance = ERC20(asset).balanceOf(source);
+        uint256 hodlerAssetBalance = ERC20(asset).balanceOf(hodler);
 
-        shares = bound(shares, 1e10, sourceBalance / 2);
+        shares = bound(shares, 1e10, hodlerAssetBalance / 2);
 
-        vm.startPrank(source);
-            ERC20(asset).approve(address(module), type(uint256).max);
-            uint256 depositAssets = module.previewDeposit(shares) * 2;
-            module.deposit(depositAssets, source);
+        vm.startPrank(hodler);
+            ERC20(asset).approve(address(strategy), type(uint256).max);
+            uint256 depositAssets = strategy.previewDeposit(shares) * 2;
+            strategy.deposit(depositAssets, hodler);
 
             uint256 ySharesBefore = ERC20(yVault).balanceOf(address(module));
-            console.log("ySharesBefore");
-            console.log(ySharesBefore);
             uint256 yVaultBalBefore = ERC20(asset).balanceOf(yVault);
-            uint256 sourceBalanceBefore = ERC20(asset).balanceOf(source);
-            uint256 sharesBefore = module.balanceOf(source);
+            uint256 hodlerAssetBalanceBefore = ERC20(asset).balanceOf(hodler);
+            uint256 sharesBefore = strategy.balanceOf(hodler);
 
-            module.redeem(shares, source, source);
+            strategy.redeem(shares, hodler, hodler);
         vm.stopPrank();
 
-        uint256 assetBalanceAfter = ERC20(asset).balanceOf(source);
-        uint256 sharesAfter = module.balanceOf(source);
+        uint256 assetBalanceAfter = ERC20(asset).balanceOf(hodler);
+        uint256 sharesAfter = strategy.balanceOf(hodler);
         uint256 ySharesAfter = ERC20(yVault).balanceOf(address(module));
         uint256 yVaultBalAfter = ERC20(asset).balanceOf(yVault);
 
-        assertTrue(_eqWithDust(shares, sharesBefore - sharesAfter),
+        assertTrue(_eqApprox(shares, sharesBefore - sharesAfter, 1e6),
             "user burnt the correct amount of shares"); // dust tollerated
         assertGt(ySharesBefore - ySharesAfter, 0, "module burnt yVault shares");
-        assertTrue(_eqWithDust(module.convertToAssets(shares), assetBalanceAfter - sourceBalanceBefore),
+        assertTrue(_eqApprox(module.convertToAssets(shares), assetBalanceAfter - hodlerAssetBalanceBefore, 1e6),
             "user withdrew the correct amount of assets"); // dust tollerated
-        assertTrue(_eqWithDust(module.convertToAssets(shares), yVaultBalBefore - yVaultBalAfter),
+        assertTrue(_eqApprox(module.convertToAssets(shares), yVaultBalBefore - yVaultBalAfter, 1e6),
             "yVault transfered the correct amount of assets"); // dust tollerated
     }
 

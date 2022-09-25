@@ -14,3 +14,4 @@ interface IConvexBooster {
             bool
         );
 }
+

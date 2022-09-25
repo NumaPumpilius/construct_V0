@@ -159,8 +159,11 @@ contract YearnConvexModule is ModularERC4626, YearnBaseWrapper {
     function getModuleApr() public view override returns (int256) {
         VaultAPI bestVault = bestVault();
         uint256 managementFee = bestVault.managementFee();
+        console.log("yearn management fee:", managementFee);
         uint256 performanceFee = bestVault.performanceFee();
+        console.log("yearn performance fee:", performanceFee);
         uint256 grossApr = getGrossApr();
+        console.log("yearn gross apr:", grossApr);
         return int256(grossApr.mulDivDown((1e18 - (performanceFee * 1e14)), 1e18)) - int256((managementFee * 1e14));
     }
 
@@ -196,7 +199,6 @@ contract YearnConvexModule is ModularERC4626, YearnBaseWrapper {
                 grossApr += extraRewardApr.mulDivDown(extraRewardTokenPrice, assetPrice);
             }
         }
-        console.log("gross apr: ", grossApr);
         return grossApr;
     }
 
@@ -234,7 +236,7 @@ contract YearnConvexModule is ModularERC4626, YearnBaseWrapper {
         uint256 assets,
         address receiver,
         address owner
-    ) public override onlySource(receiver) returns (uint256 shares) {
+    ) public override onlySource(owner) returns (uint256 shares) {
         shares = previewWithdraw(assets); // No need to check for rounding error, previewWithdraw rounds up.
 
         if (msg.sender != owner) {
@@ -256,7 +258,7 @@ contract YearnConvexModule is ModularERC4626, YearnBaseWrapper {
         uint256 shares,
         address receiver,
         address owner
-    ) public override onlySource(receiver) returns (uint256 assets) {
+    ) public override onlySource(owner) returns (uint256 assets) {
         require((assets = previewRedeem(shares)) != 0, "!assets");
 
         if (msg.sender != owner) {
@@ -280,12 +282,6 @@ contract YearnConvexModule is ModularERC4626, YearnBaseWrapper {
 
     function totalAssets() public view override(ERC4626, YearnBaseWrapper) returns (uint256) {
         return totalVaultBalance(address(this));
-    }
-
-    function previewDeposit(uint256 assets) public view override returns (uint256) {
-        uint256 supply = totalSupply;
-        uint256 assetsAfterDeposit = totalAssets() + assets;
-        return supply == 0 ? assets : assets.mulDivDown(supply, assetsAfterDeposit);
     }
 
     /*//////////////////////////////////////////////////////////////

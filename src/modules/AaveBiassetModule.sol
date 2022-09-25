@@ -7,6 +7,8 @@ import "src/interfaces/IAaveProtocolDataProvider.sol";
 import "src/interfaces/IPriceOracleGetter.sol";
 import "src/impl/Rebalancing.sol";
 
+import "forge-std/console.sol";
+
 import "openzeppelin-contracts/contracts/utils/math/Math.sol";
 
 contract AaveBiassetModule is ModularERC4626, Rebalancing {
@@ -17,7 +19,6 @@ contract AaveBiassetModule is ModularERC4626, Rebalancing {
                                 STATE
     //////////////////////////////////////////////////////////////*/
 
-    uint64 public immutable recenteringSpeed; // 6 decimals
     uint64 public immutable targetLtv; // 6 decimals
     uint64 public immutable lowerBoundLtv; // 6 decimals
     uint64 public immutable upperBoundLtv; // 6 decimals
@@ -43,23 +44,19 @@ contract AaveBiassetModule is ModularERC4626, Rebalancing {
         uint64 _targetLtv,
         uint64 _lowerBoundLtv,
         uint64 _upperBoundLtv,
-        uint64 _rebalanceInterval,
-        uint64 _recenteringSpeed
+        uint64 _rebalanceInterval
     ) ModularERC4626(_owner, _name, _symbol) Rebalancing(_rebalanceInterval) {
         require(_targetLtv > _lowerBoundLtv, "!LTV");
         require(_lowerBoundLtv > 0, "!LTV");
         require(_upperBoundLtv > _targetLtv, "!LTV");
         require(_upperBoundLtv < 1000000, "!LTV");
         require(_rebalanceInterval > 0, "!rebalanceInterval");
-        require(_recenteringSpeed > 0, "!recenteringSpeed");
-        require(_recenteringSpeed < 1000000, "!recenteringSpeed");
         lendingPool = IAaveLendingPool(_aaveLendingPool);
         dataProvider = IAaveProtocolDataProvider(_aaveDataProvider);
         oracle = IPriceOracleGetter(_aaveOracle);
         targetLtv = _targetLtv;
         lowerBoundLtv = _lowerBoundLtv;
         upperBoundLtv = _upperBoundLtv;
-        recenteringSpeed = _recenteringSpeed;
     }
 
     function initialize(
@@ -85,11 +82,15 @@ contract AaveBiassetModule is ModularERC4626, Rebalancing {
 
         __ModularERC4626_init(_asset, _product, _source, _implementation);
 
-        (aToken, , ) = dataProvider.getReserveTokensAddresses(_asset);
-        (, , debtToken) = dataProvider.getReserveTokensAddresses(_product);
+        (address _aToken, , ) = dataProvider.getReserveTokensAddresses(_asset);
+        (, , address _debtToken) = dataProvider.getReserveTokensAddresses(_product);
+
+        aToken = _aToken;
+        debtToken = _debtToken;
 
         ERC20(_asset).safeApprove(address(lendingPool), type(uint256).max); // Aave Lending Pool is trusted
-        ERC20(aToken).safeApprove(address(lendingPool), type(uint256).max); // Aave Lending Pool is trusted
+        ERC20(_product).safeApprove(address(lendingPool), type(uint256).max); // Aave Lending Pool is trusted
+        ERC20(_aToken).safeApprove(address(lendingPool), type(uint256).max); // Aave Lending Pool is trusted
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -125,7 +126,15 @@ contract AaveBiassetModule is ModularERC4626, Rebalancing {
         uint256 assets,
         address receiver,
         address owner
-    ) public override onlySource(receiver) returns (uint256 shares) {
+    ) public override onlySource(owner) returns (uint256 shares) {
+        uint256 previewLtv = _previewLtv(assets);
+        
+        if(previewLtv > upperBoundLtv) {
+            uint256 currentLtv = getCurrentLtv();
+            uint256 rebalanceLtv = currentLtv.mulDivDown(targetLtv, previewLtv);
+            _rebalanceToValue(rebalanceLtv);
+        }
+
         shares = previewWithdraw(assets); // No need to check for rounding error, previewWithdraw rounds up.
 
         if (msg.sender != owner) {
@@ -145,18 +154,27 @@ contract AaveBiassetModule is ModularERC4626, Rebalancing {
         uint256 shares,
         address receiver,
         address owner
-    ) public override onlySource(receiver) returns (uint256 assets) {
+    ) public override onlySource(owner) returns (uint256 assets) {
+        // Check for rounding error since we round down in previewRedeem.
+        require((assets = previewRedeem(shares)) != 0, "ZERO_ASSETS");
+
+        uint256 previewLtv = _previewLtv(assets);
+        
+        if(previewLtv > upperBoundLtv) {
+            uint256 currentLtv = getCurrentLtv();
+            uint256 rebalanceLtv = currentLtv.mulDivDown(targetLtv, previewLtv);
+            _rebalanceToValue(rebalanceLtv);
+        }
+
         if (msg.sender != owner) {
             uint256 allowed = allowance[owner][msg.sender]; // Saves gas for limited approvals.
 
             if (allowed != type(uint256).max) allowance[owner][msg.sender] = allowed - shares;
         }
 
-        // Check for rounding error since we round down in previewRedeem.
-        require((assets = previewRedeem(shares)) != 0, "ZERO_ASSETS");
 
         _burn(owner, shares);
-
+        
         lendingPool.withdraw(address(asset), assets, receiver);
 
         emit Withdraw(msg.sender, receiver, owner, assets, shares);
@@ -192,17 +210,44 @@ contract AaveBiassetModule is ModularERC4626, Rebalancing {
     //////////////////////////////////////////////////////////////*/
 
     function totalAssets() public view override returns (uint256) {
-        return ERC20(aToken).balanceOf(address(this));
+        uint256 collateralValue = ERC20(aToken).balanceOf(address(this));
+        uint256 debtBalance = ERC20(debtToken).balanceOf(address(this));
+        uint256 targetShares = target.balanceOf(address(this));
+
+        if(debtBalance == 0 || targetShares == 0) return collateralValue;
+        
+        uint256 targetBalance = totalTargetBalance();
+        uint256 productPrice = oracle.getAssetPrice(address(product)).mulDivUp(
+            1e18, 
+            oracle.getAssetPrice(address(asset))
+        );
+
+        if(debtBalance > targetBalance) {
+            uint256 netDebt = (debtBalance - targetBalance).mulDivDown(10**asset.decimals(), 10**product.decimals());
+            uint256 netDebtValue = netDebt.mulDivUp(1e18, productPrice);
+            console.log("collateralValue", collateralValue);
+            console.log("netDebtValue", netDebtValue);
+            return collateralValue - netDebtValue;
+        } else {
+            uint256 netDebt = (targetBalance - debtBalance).mulDivUp(10**asset.decimals(), 10**product.decimals());
+            uint256 netDebtValue = netDebt.mulDivDown(1e18, productPrice);
+            return collateralValue + netDebtValue;
+        }
+
     }
 
     function getModuleApr() public view override returns (int256) {
         uint256 depositRate;
         ( , , , depositRate, , , , , , ) = dataProvider.getReserveData(address(asset));
         uint256 borrowRate;
-        ( , , , , , borrowRate, , , , ) = dataProvider.getReserveData(address(product));
+        ( , , , , borrowRate, , , , , ) = dataProvider.getReserveData(address(product));
         uint256 currentLtv = getCurrentLtv();
+        console.log("aave deposit rate", depositRate.mulDivDown(1e18, 1e27));
+        console.log("aave borrow rate", borrowRate.mulDivUp(1e18, 1e27));
+        int256 moduleApr = int256(depositRate.mulDivDown(1e18, 1e27)) - int256(
+            borrowRate.mulDivUp(currentLtv * 1e18, 1e6 * 1e27)
+        );
 
-        int256 moduleApr = int256(depositRate) - int256(borrowRate.mulDivUp(currentLtv, 1e6));
         return moduleApr;
     }
 
@@ -247,39 +292,69 @@ contract AaveBiassetModule is ModularERC4626, Rebalancing {
     }
 
     function _rebalance() internal override {
-        // harvest the profit
+        // harvest the profit if there is any
         _harvest();
 
         // do not call get functions directly to reduce gas costs
         uint256 collateralETH;
         uint256 debtETH;
-        uint256 newLtv;
+        (collateralETH, debtETH, , , , ) = lendingPool.getUserAccountData(address(this));
 
-        {
-            uint256 recenteringSpeed_ = uint256(recenteringSpeed);
-            (collateralETH, debtETH, , , , ) = lendingPool.getUserAccountData(address(this));
-            uint256 currentLtv = debtETH.mulDivUp(1e6, collateralETH);
-            uint256 estimatedLtv = currentLtv.mulDivDown(1e6 - recenteringSpeed_, 1e6) +
-                uint256(targetLtv).mulDivDown(recenteringSpeed_, 1e6);
-            newLtv = Math.max(uint256(lowerBoundLtv), Math.min(uint256(upperBoundLtv), estimatedLtv));
-        }
-
-        uint256 newDebtETH = collateralETH.mulDivDown(newLtv, 1e6);
-        uint256 productEthPrice = oracle.getAssetPrice(address(product));
+        uint256 newDebtETH = collateralETH.mulDivDown(targetLtv, 1e6);
+        uint256 productPrice = oracle.getAssetPrice(address(product));
 
         if (newDebtETH > debtETH) {
             uint256 borrowAmountETH = newDebtETH - debtETH;
-            uint256 borrowAmount = borrowAmountETH.mulDivDown(1e18, productEthPrice);
+            uint256 borrowAmount = borrowAmountETH.mulDivDown(1e18, productPrice);
             lendingPool.borrow(address(product), borrowAmount, 2, 0, address(this));
             uint256 borrowed = product.balanceOf(address(this));
             target.deposit(borrowed, address(this));
         } else {
             uint256 repayAmountETH = debtETH - newDebtETH;
-            uint256 repayAmount = repayAmountETH.mulDivDown(1e18, productEthPrice);
+            uint256 repayAmount = repayAmountETH.mulDivDown(1e18, productPrice);
             target.redeem(repayAmount, address(this), address(this));
             uint256 redeemed = product.balanceOf(address(this));
             lendingPool.repay(address(product), redeemed, 2, address(this));
         }
+    }
+
+    function _rebalanceToValue(uint256 ltvValue) internal {
+        uint256 collateralETH;
+        uint256 debtETH;
+        (collateralETH, debtETH, , , , ) = lendingPool.getUserAccountData(address(this));
+
+        uint256 newDebtETH = collateralETH.mulDivDown(ltvValue, 1e6);
+        uint256 productPrice = oracle.getAssetPrice(address(product));
+
+        if (newDebtETH > debtETH) {
+            uint256 borrowAmountETH = newDebtETH - debtETH;
+            uint256 borrowAmount = borrowAmountETH.mulDivDown(1e18, productPrice);
+            lendingPool.borrow(address(product), borrowAmount, 2, 0, address(this));
+            uint256 borrowed = product.balanceOf(address(this));
+            target.deposit(borrowed, address(this));
+        } else {
+            uint256 repayAmountETH = debtETH - newDebtETH;
+            uint256 repayAmount = repayAmountETH.mulDivDown(1e18, productPrice);
+            console.log("repayAmount", repayAmount);
+            target.redeem(repayAmount, address(this), address(this));
+            uint256 redeemed = product.balanceOf(address(this));
+            console.log("redeemed", redeemed);
+            lendingPool.repay(address(product), redeemed, 2, address(this));
+        }
+    }
+
+    function _previewLtv(uint256 assetsToWithdraw) internal view returns(uint256) {
+        uint256 collateralETH;
+        uint256 debtETH;
+        (collateralETH, debtETH, , , , ) = lendingPool.getUserAccountData(address(this));
+        uint256 assetPriceETH = oracle.getAssetPrice(address(asset));
+        uint256 assetsToWithdrawETH = assetsToWithdraw.mulDivDown(
+            assetPriceETH, 
+            10**asset.decimals()
+        );
+        uint256 newCollateralETH = collateralETH - assetsToWithdrawETH;
+        uint256 previewLtv = debtETH.mulDivUp(1e6, newCollateralETH);
+        return previewLtv;
     }
 
     function getReward() public view override returns (uint256) {

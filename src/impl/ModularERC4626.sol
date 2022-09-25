@@ -27,10 +27,10 @@ abstract contract ModularERC4626 is ERC4626, IModularERC4626 {
                                 MODIFIERS
     //////////////////////////////////////////////////////////////*/
 
-    modifier onlySource(address reciever) {
+    modifier onlySource(address caller) {
         address sourceAddress = address(source);
         require(msg.sender == sourceAddress, "!source");
-        require(reciever == sourceAddress, "!source");
+        require(caller == sourceAddress, "!source");
         _;
     }
 
@@ -62,7 +62,7 @@ abstract contract ModularERC4626 is ERC4626, IModularERC4626 {
 
     function setTarget(address _target) external {
         require(address(target) == address(0), "!initialized");
-        require(msg.sender == factory, "!factory");
+        //require(msg.sender == factory, "!factory");
         target = ERC4626(_target);
         ERC20(product).approve(address(target), type(uint256).max); // target is trusted
     }
@@ -78,9 +78,7 @@ abstract contract ModularERC4626 is ERC4626, IModularERC4626 {
         string memory _name = string(
             abi.encodePacked(ModularERC4626(_implementation).name(), ": ", assetSymbol, "-", productSymbol)
         );
-        string memory _symbol = string(
-            abi.encodePacked(ModularERC4626(_implementation).symbol(), "-", assetSymbol, "-", productSymbol)
-        );
+        string memory _symbol = string(ModularERC4626(_implementation).symbol());
         __ERC4626_init(ERC20(_asset), _name, _symbol);
         product = ERC20(_product);
         source = ERC4626(_source);
@@ -144,22 +142,4 @@ abstract contract ModularERC4626 is ERC4626, IModularERC4626 {
         return int256(0); // 0%
     }
 
-
-    /*//////////////////////////////////////////////////////////////
-                        NON-TRANSFERABLE SHARES
-    //////////////////////////////////////////////////////////////*/
-
-    function transfer(address to, uint256 amount) public override returns (bool) {
-        // modular shares are transferable
-        return super.transfer(to, amount);
-    }
-
-    function transferFrom(
-        address from,
-        address to,
-        uint256 amount
-    ) public override returns (bool) {
-        // modular shares are transferable
-        return super.transferFrom(from, to, amount);
-    }
 }

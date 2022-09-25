@@ -4,6 +4,6 @@ out = 'out'
 libs = ['lib']
 solc = "0.8.13"
 eth-rpc-url = "https://eth-mainnet.g.alchemy.com/v2/4iNUGh-A280E5jE4rMHkH91lAnSMSC9f"
-block_number = 15377058
+block_number = 15589009
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config

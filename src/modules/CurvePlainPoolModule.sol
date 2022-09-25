@@ -135,7 +135,7 @@ contract CurvePlainPoolModule is ModularERC4626 {
         uint256 assets,
         address receiver,
         address owner
-    ) public override onlySource(receiver) returns (uint256 shares) {
+    ) public override onlySource(owner) returns (uint256 shares) {
         ICurvePool curvePool = ICurvePool(address(product));
         uint256 index_ = assetIndex;
 
@@ -184,7 +184,7 @@ contract CurvePlainPoolModule is ModularERC4626 {
         uint256 shares,
         address receiver,
         address owner
-    ) public override onlySource(receiver) returns (uint256 assets) {
+    ) public override onlySource(owner) returns (uint256 assets) {
         ICurvePool curvePool = ICurvePool(address(product));
         uint256 index_ = assetIndex;
 
@@ -236,12 +236,19 @@ contract CurvePlainPoolModule is ModularERC4626 {
     //////////////////////////////////////////////////////////////*/
 
     function totalAssets() public view override returns (uint256) {
+        
+        uint256 targetShares = target.balanceOf(address(this));
+
+        if (targetShares == 0) return 0;
+        
         uint256 targetBalance = totalTargetBalance();
-        return
-            ICurvePool(address(product)).calc_withdraw_one_coin(
-                targetBalance,
-                int128(uint128(assetIndex))
-            );
+
+        if (targetBalance == 0) return 0;
+
+        return ICurvePool(address(product)).calc_withdraw_one_coin(
+            targetBalance,
+            int128(uint128(assetIndex))
+        );
     }
 
     function previewDeposit(uint256 assets)

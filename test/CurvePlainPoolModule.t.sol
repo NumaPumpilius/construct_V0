@@ -14,31 +14,38 @@ contract CurvePlainPoolModuleTest is Test {
     ModuleFactory factory;
     CurvePlainPoolModule implementation;
     MockModule mockImplementation;
+    ConstructStrategy strategyImpl;
+    ConstructStrategy strategy;
     ModularERC4626 module;
     ModularERC4626 target;
     address curveFactory = 0xB9fC157394Af804a3578134A6585C0dc9cc990d4;
     uint256 maxSlippage = 5 * 1e3; // 5%
     address asset = 0xD533a949740bb3306d119CC777fa900bA034cd52; //crv
     address product = 0x9D0464996170c6B9e75eED71c68B99dDEDf279e8; // crvCvxCrv
-    address source = 0x9B81d3B06cB82BC7583E51180Be4C9fed3D60C62; // CRV Holder
+    address hodler = 0x0E33Be39B13c576ff48E14392fBf96b02F40Cd34; // CRV Holder
     address owner = address(1);
+    address[] strategyPath;
 
     function setUp() public {
         factory = new ModuleFactory(owner);
+        strategyImpl = new ConstructStrategy(address(factory));
+        implementation = new CurvePlainPoolModule(
+            owner,
+            "Construct CurvePlainPool Module",
+            "CurvePlainPool",
+            curveFactory,
+            maxSlippage
+        );
+        mockImplementation = new MockModule(owner, "Mock Module", "Mock");
         vm.startPrank(owner);
-            implementation = new CurvePlainPoolModule(
-                owner,
-                "Construct CurvePlainPool Module",
-                "const-curve-plain",
-                curveFactory,
-                maxSlippage
-            );
-            mockImplementation = new MockModule(owner, "Mock Module", "const-mock");
+            factory.setStrategyImplementation(address(strategyImpl));
             factory.addImplementation(address(implementation), false, true);
             factory.addImplementation(address(mockImplementation), false, false);
             factory.setPeggedAssets(asset, product, true);
-            module = ModularERC4626(factory.deployModule(address(implementation), asset, product, source));
-            target = ModularERC4626(factory.deployModule(address(mockImplementation), product, asset, address(module))); 
+            strategyPath = [asset, address(implementation), product, address(mockImplementation), asset];
+            strategy = ConstructStrategy(factory.createStrategy(strategyPath));
+            module = ModularERC4626(strategy.modulePath(0));
+            target = ModularERC4626(strategy.modulePath(1));
         vm.stopPrank();
 
     }
@@ -50,10 +57,21 @@ contract CurvePlainPoolModuleTest is Test {
     }
 
     function testConfig() public {
+        //strategy config
+        assertEq(strategy.name(), "Strategy: CRV-CurvePlainPool-cvxcrv-f-Mock-CRV");
+        assertEq(strategy.symbol(), "Strategy-CRV");
+        assertEq(address(strategy.asset()), asset);
+        assertEq(strategy.factory(), address(factory));
+        assertEq(strategy.active(), true);
+
+        uint8 expectedDecimals = ERC20(asset).decimals();
+        uint8 moduleDecimals = strategy.decimals();
+        assertEq(moduleDecimals, expectedDecimals);
+
         // standard ModularERC4626 config
         assertEq(address(module.asset()), asset);
         assertEq(address(module.product()), product);
-        assertEq(address(module.source()), source);
+        assertEq(address(module.source()), address(strategy));
         assertEq(address(module.target()), address(target));
         assertEq(module.factory(), address(factory));
 
@@ -61,13 +79,9 @@ contract CurvePlainPoolModuleTest is Test {
         string memory moduleName = module.name();
         assertEq(moduleName, expectedName);
 
-        string memory expectedSymbol = string("const-curve-plain-CRV-cvxcrv-f");
+        string memory expectedSymbol = string("CurvePlainPool");
         string memory moduleSymbol = module.symbol();
         assertEq(moduleSymbol, expectedSymbol);
-
-        uint8 expectedDecimals = ERC20(asset).decimals();
-        uint8 moduleDecimals = module.decimals();
-        assertEq(moduleDecimals, expectedDecimals);
 
         // curve specific config
         assertEq(address(CurvePlainPoolModule(address(module)).curveFactory()), curveFactory);
@@ -76,19 +90,19 @@ contract CurvePlainPoolModuleTest is Test {
     }
 
     function testDeposit(uint256 assets) public {
-        uint256 assetBalance = ERC20(asset).balanceOf(source);
+        uint256 assetBalance = ERC20(asset).balanceOf(hodler);
         uint256 poolBalanceBefore = ERC20(asset).balanceOf(address(product));
         uint256 targetBalanceBefore = ERC20(product).balanceOf(address(target));
         uint256 poolSupplyBefore = ERC20(product).totalSupply();
 
         assets = bound(assets, 1e10, assetBalance);
 
-        vm.startPrank(source);
-            ERC20(asset).approve(address(module), type(uint256).max);
-            uint256 sharesReceived = module.deposit(assets, source);
+        vm.startPrank(hodler);
+            ERC20(asset).approve(address(strategy), type(uint256).max);
+            uint256 sharesReceived = strategy.deposit(assets, hodler);
         vm.stopPrank();
 
-        uint256 sourceBalance = module.balanceOf(source);
+        uint256 sourceBalance = strategy.balanceOf(hodler);
         uint256 poolBalanceAfter = ERC20(asset).balanceOf(address(product));
         uint256 targetBalanceAfter = ERC20(product).balanceOf(address(target));
         uint256 poolSupplyAfter = ERC20(product).totalSupply();
@@ -107,31 +121,34 @@ contract CurvePlainPoolModuleTest is Test {
 
     function testCannotDepositZero() public {
         // can not recieve zero shares
-        vm.startPrank(source);
-            ERC20(asset).approve(address(module), type(uint256).max);
-            vm.expectRevert("!shares");
-            module.deposit(0, source);
+        vm.startPrank(hodler);
+            ERC20(asset).approve(address(strategy), type(uint256).max);
+            vm.expectRevert("ZERO_SHARES");
+            strategy.deposit(0, hodler);
         vm.stopPrank();
     }
 
     function testMint(uint256 shares) public {
-        uint256 assetBalance = ERC20(asset).balanceOf(source);
+        uint256 assetBalance = ERC20(asset).balanceOf(hodler);
         uint256 poolBalanceBefore = ERC20(asset).balanceOf(address(product));
         uint256 targetBalanceBefore = ERC20(product).balanceOf(address(target));
         uint256 poolSupplyBefore = ERC20(product).totalSupply();
 
         shares = bound(shares, 1e10, assetBalance);
 
-        vm.startPrank(source);
-            ERC20(asset).approve(address(module), type(uint256).max);
-            uint256 assetsDeposited = module.mint(shares, source);
+        vm.startPrank(hodler);
+            ERC20(asset).approve(address(strategy), type(uint256).max);
+            uint256 assetsDeposited = strategy.mint(shares, hodler);
         vm.stopPrank();
 
-        uint256 assetBalanceAfter = ERC20(asset).balanceOf(source);
+        uint256 assetBalanceAfter = ERC20(asset).balanceOf(hodler);
 
         uint256 poolBalanceAfter = ERC20(asset).balanceOf(address(product));
         uint256 targetBalanceAfter = ERC20(product).balanceOf(address(target));
         uint256 poolSupplyAfter = ERC20(product).totalSupply();
+
+        console.log("expected shares", shares);
+        console.log("actual shares", strategy.balanceOf(hodler));
         
         assertEq(assetBalance - assetBalanceAfter, assetsDeposited, "user spent the correct amount of assets");
         //assertEq(shares, sourceBalance, "user received correct amount of shares");
@@ -140,33 +157,33 @@ contract CurvePlainPoolModuleTest is Test {
         assertEq(poolBalanceAfter - poolBalanceBefore, assetsDeposited, "Pool received all the assets");
         assertEq(targetBalanceAfter - targetBalanceBefore, poolSupplyAfter - poolSupplyBefore, 
             "Target received all the products");
-        assertTrue(_eqApprox(shares, module.balanceOf(source), 1e2), 
+        assertTrue(_eqApprox(shares, strategy.balanceOf(hodler), 1e2), 
             "user received correct amount of shares"); // dust tollerated
         assertTrue(_eqApprox(assetsDeposited, module.totalAssets(), 1e2), 
             "totalAssets of module equal deposited assets"); // dust tollerated
     }
 
     function testWithdraw(uint256 assets) public {
-        uint256 assetBalance = ERC20(asset).balanceOf(source);
+        uint256 assetBalance = ERC20(asset).balanceOf(hodler);
 
         assets = bound(assets, 1e18, assetBalance / 2);
 
-        vm.startPrank(source);
-            ERC20(asset).approve(address(module), type(uint256).max);
-            module.deposit(assets * 2, source);
+        vm.startPrank(hodler);
+            ERC20(asset).approve(address(strategy), type(uint256).max);
+            strategy.deposit(assets * 2, hodler);
 
             uint256 targetBalanceBefore = ERC20(product).balanceOf(address(target));
             uint256 poolBalanceBefore = ERC20(asset).balanceOf(product);
-            uint256 assetBalanceBefore = ERC20(asset).balanceOf(source);
-            uint256 sharesBefore = module.balanceOf(source);
+            uint256 assetBalanceBefore = ERC20(asset).balanceOf(hodler);
+            uint256 sharesBefore = strategy.balanceOf(hodler);
 
-            uint256 sharesBurnt = module.withdraw(assets, source, source);
+            uint256 sharesBurnt = strategy.withdraw(assets, hodler, hodler);
         vm.stopPrank();
 
         uint256 targetBalanceAfter = ERC20(product).balanceOf(address(target));
         uint256 poolBalanceAfter = ERC20(asset).balanceOf(product);
-        uint256 assetBalanceAfter = ERC20(asset).balanceOf(source);
-        uint256 sharesAfter = module.balanceOf(source);
+        uint256 assetBalanceAfter = ERC20(asset).balanceOf(hodler);
+        uint256 sharesAfter = strategy.balanceOf(hodler);
 
         assertEq(sharesBefore - sharesAfter, sharesBurnt, "user burnt the correct amount of shares");
         assertGt(targetBalanceBefore - targetBalanceAfter, 0, "module burnt pool shares");
@@ -177,32 +194,34 @@ contract CurvePlainPoolModuleTest is Test {
     }
 
     function testRedeem(uint256 shares) public {
-        uint256 assetBalance = ERC20(asset).balanceOf(source);
+        uint256 assetBalance = ERC20(asset).balanceOf(hodler);
 
         shares = bound(shares, 1e18, assetBalance / 2);
 
-        vm.startPrank(source);
-            ERC20(asset).approve(address(module), type(uint256).max);
-            uint256 depositAssets = module.previewDeposit(shares) * 2;
-            module.deposit(depositAssets, source);
+        vm.startPrank(hodler);
+            ERC20(asset).approve(address(strategy), type(uint256).max);
+            uint256 depositAssets = strategy.previewDeposit(shares) * 2;
+            strategy.deposit(depositAssets, hodler);
 
             uint256 targetBalanceBefore = ERC20(product).balanceOf(address(target));
             uint256 poolBalanceBefore = ERC20(asset).balanceOf(product);
-            uint256 assetBalanceBefore = ERC20(asset).balanceOf(source);
-            uint256 sharesBefore = module.balanceOf(source);
+            uint256 assetBalanceBefore = ERC20(asset).balanceOf(hodler);
+            uint256 sharesBefore = strategy.balanceOf(hodler);
 
-            uint256 assets = module.redeem(shares, source, source);
+            uint256 assets = strategy.redeem(shares, hodler, hodler);
         vm.stopPrank();
 
         uint256 targetBalanceAfter = ERC20(product).balanceOf(address(target));
         uint256 poolBalanceAfter = ERC20(asset).balanceOf(product);
-        uint256 assetBalanceAfter = ERC20(asset).balanceOf(source);
-        uint256 sharesAfter = module.balanceOf(source);
+        uint256 assetBalanceAfter = ERC20(asset).balanceOf(hodler);
+        uint256 sharesAfter = strategy.balanceOf(hodler);
 
         assertTrue(_eqApprox(shares, sharesBefore - sharesAfter, 1e2),  "user burnt the correct amount of shares");
         assertGt(targetBalanceBefore - targetBalanceAfter, 0, "module burnt pool shares");
-        assertEq(assets, assetBalanceAfter - assetBalanceBefore, "user withdrew the correct amount of assets"); 
-        assertEq(assets, poolBalanceBefore - poolBalanceAfter, "pool transfered the correct amount of assets"); 
+        assertTrue(_eqApprox(assets, assetBalanceAfter - assetBalanceBefore, 1e2),
+            "user withdrew the correct amount of assets"); // dust tollerated
+        assertTrue(_eqApprox(assets, poolBalanceBefore - poolBalanceAfter, 1e2),
+            "pool transfered the correct amount of assets"); // dust tollerated
     }
 
 

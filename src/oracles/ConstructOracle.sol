@@ -44,4 +44,8 @@ contract ConstructOracle is Owned, IPriceOracleGetter {
             }
         }
     }
+
+    function getUnderlyingPrice(address cToken) external view returns (uint256) {
+        return getAssetPrice(cToken);
+    }
 }

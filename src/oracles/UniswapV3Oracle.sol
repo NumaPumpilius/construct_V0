@@ -71,11 +71,15 @@ contract UniswapV3Oracle is Owned, IPriceOracleGetter {
         price = FixedPointMathLib.mulDivDown(getPriceX96(poolAddress), 1e18, FixedPoint96.Q96);
     }
 
-    function getAssetPrice(address asset) external view returns (uint256) {
+    function getAssetPrice(address asset) public view returns (uint256) {
         address usdc_ = usdc;
         if (asset == usdc_) return 1;
         uint256 ethPrice = getETHPrice();
         uint256 assetETHPrice = getAssetETHPrice(asset);
         return FixedPointMathLib.mulDivDown(assetETHPrice, ethPrice, 1e18);
+    }
+
+    function getUnderlyingPrice(address cToken) external view returns (uint256) {
+        return getAssetPrice(cToken);
     }
 }

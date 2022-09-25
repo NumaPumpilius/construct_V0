@@ -11,6 +11,25 @@ import "src/impl/Rebalancing.sol";
 import "forge-std/console.sol";
 
 contract ModuleFactory is Owned {
+
+    /*//////////////////////////////////////////////////////////////
+                                EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    event AddImplementation(address indexed caller, address implementation, uint256 id);
+
+    event DeactivateImplementation(address indexed caller, address implementation, uint256 id);
+    
+    event CreateStrategy(address indexed caller, address indexed asset, address strategy, string strategyName);
+
+    event SetAllowPublicImplementations(bool set);
+
+    event SetAllowPublicStrategies(bool set);
+
+    /*//////////////////////////////////////////////////////////////
+                                STATE
+    //////////////////////////////////////////////////////////////*/
+
     struct ImplementationParams {
         bool rebalancing;
         bool morphism;
@@ -23,6 +42,8 @@ contract ModuleFactory is Owned {
     address[] public allModules;
 
     address[] public allModuleImplementations;
+
+    address [] public allStrategies;
 
     bool public allowPublicImplementations;
 
@@ -38,6 +59,10 @@ contract ModuleFactory is Owned {
 
     constructor(address owner) Owned(owner) {}
 
+    /*//////////////////////////////////////////////////////////////
+                            GENERAL CONFIG
+    //////////////////////////////////////////////////////////////*/
+    
     function setPeggedAssets(
         address asset1,
         address asset2,
@@ -46,6 +71,22 @@ contract ModuleFactory is Owned {
         isPegged[asset1][asset2] = pegged;
         isPegged[asset2][asset1] = pegged; // populate mapping in reverse direction
     }
+
+    function setAllowPublicImplementations(bool set) external onlyOwner {
+        allowPublicImplementations = set;
+
+        emit SetAllowPublicImplementations(set);
+    }
+
+    function setAllowPublicStrategies(bool set) external onlyOwner {
+        allowPublicStrategies = set;
+
+        emit SetAllowPublicStrategies(set);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            IMPLEMENTATION CONFIG
+    //////////////////////////////////////////////////////////////*/
 
     function setStrategyImplementation(address _implementation) external onlyOwner {
         strategyImplementation = _implementation;
@@ -72,7 +113,11 @@ contract ModuleFactory is Owned {
         }
 
         allModuleImplementations.push(_implementation);
+
+        emit AddImplementation(msg.sender, _implementation, params0.id);
+
         return params0.id;
+
     }
 
     function deactivateImplementaion(address implementation) external {
@@ -85,27 +130,12 @@ contract ModuleFactory is Owned {
         moduleImplementations[implementation].active = false;
     }
 
-    function deployModule(
-        address implementation,
-        address asset,
-        address product,
-        address source
-    ) public returns (address module) {
-        ImplementationParams memory params0 = moduleImplementations[implementation];
 
-        require(params0.active, "!active");
+    /*//////////////////////////////////////////////////////////////
+                                STRATEGY FACTORY
+    //////////////////////////////////////////////////////////////*/
 
-        // check if morphism is valid
-        if (params0.morphism) {
-            require(isPegged[asset][product], "!pegged");
-        }
 
-        // deploy minimal proxy
-        module = Clones.clone(implementation);
-        require(module != address(0), "!module");
-        IModularERC4626(module).initialize(asset, product, source, implementation);
-        modules[module] = implementation;
-    }
 
     function createStrategy(address[] calldata _path) external returns (address strategy) {
         require(msg.sender == owner || allowPublicStrategies, "!authorized");
@@ -117,7 +147,6 @@ contract ModuleFactory is Owned {
 
         // deploy minimal proxy
         strategy = Clones.cloneDeterministic(strategyImplementation, salt);
-        strategies[strategy] = true;
         address[] memory modulePath = new address[](_path.length / 2);
 
         address source_ = strategy;
@@ -126,11 +155,34 @@ contract ModuleFactory is Owned {
             address implementation_ = _path[i];
             address asset_ = _path[i-1];
             address product_ = _path[i+1];
-            source_ = deployModule(implementation_, asset_, product_, source_);
+            source_ = _deployModule(implementation_, asset_, product_, source_);
             modulePath[(i-1) / 2] = source_;
         }
 
         ConstructStrategy(strategy).initialize(_path[0], modulePath);
+        string memory strategyName = ConstructStrategy(strategy).name();
+        strategies[strategy] = true;
+        allStrategies.push(strategy);
+        
+        emit CreateStrategy(msg.sender, _path[0], strategy, strategyName);
+    }
+
+    function _deployModule(
+        address implementation,
+        address asset,
+        address product,
+        address source
+    ) internal returns (address module) {
+
+        // deploy minimal proxy
+        module = Clones.clone(implementation);
+        require(module != address(0), "!module");
+        IModularERC4626(module).initialize(asset, product, source, implementation);
+        modules[module] = implementation;
+    }
+
+    function getAllStrategies() external view returns (address[] memory) {
+        return allStrategies;
     }
 
 }

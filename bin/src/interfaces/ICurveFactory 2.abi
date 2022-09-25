@@ -1,1 +1,0 @@
-[{"inputs":[{"internalType":"address","name":"pool","type":"address"}],"name":"get_coins","outputs":[{"internalType":"address[4]","name":"","type":"address[4]"}],"stateMutability":"view","type":"function"}]
